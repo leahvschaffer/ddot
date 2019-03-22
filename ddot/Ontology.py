@@ -3212,8 +3212,92 @@ class Ontology(object):
             return cls.run_clixo(graph, **kwargs)
         elif method.lower()=='scipy.linkage':
             return cls.run_scipy_linkage(graph, **kwargs)
+        elif method in ['louvain', 'infomap']:
+            return cls.run_community_alg(graph, method, **kwargs)
         else:
             raise Exception("Unsupported method for inferring ontology")
+
+
+    @classmethod
+    def run_community_alg(cls, graph, method, output, **kwargs):
+
+        def louvain_multiplex(graphs, partition_type, **kwargs):
+            layers, interslice_layer, G_full = louvain.time_slices_to_layers(graphs,
+                                                                             vertex_id_attr='name',
+                                                                             **kwargs)
+            partitions = [partition_type(H, **kwargs) for H in layers]
+            interslice_partition = partition_type(interslice_layer, **kwargs)
+            optimiser = louvain.Optimiser()
+            optimiser.optimise_partition_multiplex(partitions + [interslice_partition])
+            quality = sum([p.quality() for p in partitions + [interslice_partition]])
+            return partitions[0], quality # TODO: need to make sure the output here
+
+        def partition_to_clust(graphs, partition, min_size_cut=2):
+            clusts = []
+            node_names = []
+            for g in graphs:
+                node_names.extend(g.vs['name'])
+            for i in range(len(partition)):
+                clust = [node_names[id] for id in partition[i]]
+                clust = list(set(clust))
+                if len(clust) < min_size_cut:
+                    continue
+                clust.sort()
+                clusts.append(clust)
+            clusts = sorted(clusts, key=lambda x: len(x), reverse=True)
+            return clusts
+
+        multi = False
+        if isinstance(list, graph):
+            multi = True
+        if method == 'louvain':
+
+            # import Van Traag louvain package
+            import louvain
+            # import igraph # already imported
+            # enable multiple configuration models; see
+
+            config_model = ''
+            if 'configuration_model' in kwargs:
+                config_model = kwargs['configuration_model']
+            if config_model == 'RB':
+                partition_type = louvain.RBConfigurationVertexPartition
+            elif config_model == 'RBER':
+                partition_type = louvain.RBERConfigurationVertexPartition
+            elif config_model == 'CPM':
+                partition_type = louvain.CPMVertexPartition
+            elif config_model == 'Surprise':
+                partition_type = louvain.SurpriseVertexPartition
+            elif config_model == "Significance":
+                partition_type = louvain.SignificanceVertexPartition
+            else:
+                # print("Not recognize the configuration model; perform simple Louvain.")
+                partition_type = louvain.ModularityVertexPartition
+
+            if multi:
+                G = [igraph.Graph.Read_Ncol(g) for g in graph]
+                partition, quality = louvain_multiplex(G, partition_type, **kwargs)
+                clusts = partition_to_clust(G, partition)
+
+            else:
+                G = igraph.Graph.Read_Ncol(graph)
+                partition = louvain.find_partition(G, partition_type, **kwargs)
+                quality = partition.quality()
+                clusts = partition_to_clust([G], partition)
+
+            table = []
+            for i in clusts:
+                for n in clusts[i]:
+                    table.append((i, n))
+            df = pd.DataFrame.from_records(table)
+            ont = cls.from_table(df)
+            ont.add_root('ROOT', inplace=True)
+            return ont, quality
+        elif method == 'infomap':
+            pass
+        else:
+            raise Exception("Unsupported method of community detection")
+        return
 
     @classmethod
     def run_scipy_linkage(cls,
@@ -3275,9 +3359,9 @@ class Ontology(object):
                   graph,
                   alpha=0.0,
                   beta=None,
-                  newman_modularity=None,
-                  miyauchi_modularity=None,
-                  stop_score=None,
+                  # newman_modularity=None,
+                  # miyauchi_modularity=None,
+                  # stop_score=None,
                   min_dt=-10000000,
                   timeout=100000000,
                   square=False,
@@ -3285,9 +3369,10 @@ class Ontology(object):
                   output=None,
                   output_log=None,
                   clixo_cmd=None,
-                  clixo_version=None,
+                  clixo_version='0.3',
                   verbose=False, 
-                  debug=False):
+                  debug=False,
+                  **kwargs):
         """Runs the CLIXO algorithm and returns the result as an Ontology object.
 
         Acts as a wrapper for the C++ packages for CLIXO v0.3 (`https://mhk7.github.io/clixo_0.3/`) and v1.0 (`https://github.com/fanzheng10/CliXO`).
@@ -3397,9 +3482,6 @@ class Ontology(object):
                     graph,
                     alpha=alpha,
                     beta=beta,
-                    newman_modularity=newman_modularity,
-                    miyauchi_modularity=miyauchi_modularity,
-                    stop_score=stop_score,
                     min_dt=min_dt,
                     timeout=timeout,
                     output=output,
@@ -3407,7 +3489,8 @@ class Ontology(object):
                     clixo_cmd=clixo_cmd,
                     clixo_version=clixo_version,
                     verbose=verbose,
-                    debug=debug)
+                    debug=debug,
+                    **kwargs)
             finally:
                 if delete_output:
                     os.remove(output)
@@ -3418,10 +3501,7 @@ class Ontology(object):
 
         top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddot)))
 
-        if clixo_version is None:
-            clixo_version = 0.3
-
-        if clixo_version == 0.3:
+        if clixo_version == '0.3':
             if clixo_cmd is None:
                 clixo_cmd = os.path.join(top_level, 'clixo_0.3', 'clixo')
 
@@ -3430,7 +3510,7 @@ class Ontology(object):
                 
             cmd = ("""{0} {1} {2} {3} """.format(clixo_cmd, graph, alpha, beta) +
                    """ | tee {}""".format(output_log))            
-        elif clixo_version == 1.0:
+        elif clixo_version == '1.0':
             if clixo_cmd is None:
                 raise Exception(
                     """Please install CliXO 1.0 from https://github.com/fanzheng10/CliXO,"""
@@ -3441,25 +3521,25 @@ class Ontology(object):
                     """For CliXO v1.0, alpha must be set to a positive (non-zero) value.""")
                 
             # Format optional parameters
-            if beta is None:
-                beta = ""
-            else:
-                beta = '-b %s' % beta                
-            if newman_modularity is None:
-                newman_modularity = ""            
-            else:
-                newman_modularity = '-m %s' % newman_modularity
-            if miyauchi_modularity is None:
-                miyauchi_modularity = ""                
-            else:
-                miyauchi_modularity = '-z %s' % miyauchi_modularity
-            if stop_score is None:
-                stop_score = ""
-            else:
-                stop_score = '-s %s' % stop_score
 
-            cmd = ("""{} -i {} -a {} {} {} {} {}""".format(clixo_cmd, graph, alpha, beta, newman_modularity, miyauchi_modularity, stop_score) + 
-                   """ | tee {}""".format(output_log))
+            cmd = '{} -i {} -a {}'
+
+            if beta is None:
+                beta = ''
+            else:
+                beta = ' -b %s ' % beta
+
+            cmd += beta
+            if 'clixo1.0_params' in kwargs:
+                assert isinstance(dict, kwargs['clixo1.0_params']), 'Use a dictionary in **kwargs to specify optional CliXO 1.0 parameters'
+                if 'm' in kwargs['clixo1.0_params']:
+                    cmd += ' -m %s ' % kwargs['clixo1.0_params']['m']
+                if 'z' in kwargs['clixo1.0_params']:
+                    cmd += ' -z %s ' % kwargs['clixo1.0_params']['z']
+                if 's' in kwargs['clixo1.0_params']:
+                    cmd += ' -s %s ' % kwargs['clixo1.0_params']['s']
+
+            cmd +=  ' | tee {}'.format(output_log)
             
         if verbose:
             print('CLIXO command:', cmd)
