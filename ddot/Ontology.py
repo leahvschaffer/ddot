@@ -3219,7 +3219,7 @@ class Ontology(object):
 
 
     @classmethod
-    def run_community_alg(cls, graph, method, output, **kwargs):
+    def run_community_alg(cls, graph, method, **kwargs):
 
         def louvain_multiplex(graphs, partition_type, **kwargs):
             layers, interslice_layer, G_full = louvain.time_slices_to_layers(graphs,
@@ -3248,7 +3248,7 @@ class Ontology(object):
             return clusts
 
         multi = False
-        if isinstance(list, graph):
+        if isinstance(graph, list):
             multi = True
         if method == 'louvain':
 
@@ -3286,11 +3286,11 @@ class Ontology(object):
                 clusts = partition_to_clust([G], partition)
 
             table = []
-            for i in clusts:
+            for i in range(len(clusts)):
                 for n in clusts[i]:
-                    table.append((i, n))
+                    table.append((i, n, 'gene'))
             df = pd.DataFrame.from_records(table)
-            ont = cls.from_table(df)
+            ont = cls.from_table(df, clixo_format=True)
             ont.add_root('ROOT', inplace=True)
             return ont, quality
         elif method == 'infomap':
