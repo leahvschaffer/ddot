@@ -3221,16 +3221,16 @@ class Ontology(object):
     @classmethod
     def run_community_alg(cls, graph, method, **kwargs):
 
-        def louvain_multiplex(graphs, partition_type, **kwargs):
+        def louvain_multiplex(graphs, partition_type, interslice_weight=0.1, **kwargs):
             layers, interslice_layer, G_full = louvain.time_slices_to_layers(graphs,
                                                                              vertex_id_attr='name',
-                                                                             **kwargs)
+                                                                             interslice_weight=interslice_weight)
             partitions = [partition_type(H, **kwargs) for H in layers]
-            interslice_partition = partition_type(interslice_layer, **kwargs)
+            interslice_partition = partition_type(interslice_layer, weights='weight', **kwargs)
             optimiser = louvain.Optimiser()
             optimiser.optimise_partition_multiplex(partitions + [interslice_partition])
             quality = sum([p.quality() for p in partitions + [interslice_partition]])
-            return partitions[0], quality # TODO: need to make sure the output here
+            return partitions[0], quality
 
         def partition_to_clust(graphs, partition, min_size_cut=2):
             clusts = []
@@ -3260,6 +3260,7 @@ class Ontology(object):
             config_model = ''
             if 'configuration_model' in kwargs:
                 config_model = kwargs['configuration_model']
+                kwargs.pop('configuration_model')
             if config_model == 'RB':
                 partition_type = louvain.RBConfigurationVertexPartition
             elif config_model == 'RBER':
@@ -3271,8 +3272,10 @@ class Ontology(object):
             elif config_model == "Significance":
                 partition_type = louvain.SignificanceVertexPartition
             else:
-                # print("Not recognize the configuration model; perform simple Louvain.")
+                print("Not specifying the configuration model; perform simple Louvain.")
                 partition_type = louvain.ModularityVertexPartition
+                if 'resolution_parameter' in kwargs:
+                    kwargs.pop('resolution_parameter')
 
             if multi:
                 G = [igraph.Graph.Read_Ncol(g) for g in graph]
@@ -3282,19 +3285,22 @@ class Ontology(object):
             else:
                 G = igraph.Graph.Read_Ncol(graph)
                 partition = louvain.find_partition(G, partition_type, **kwargs)
-                quality = partition.quality()
+                # quality = partition.quality()
                 clusts = partition_to_clust([G], partition)
 
             table = []
+            if len(clusts) == 0:
+                print("No cluster; Resolution parameter may be too extreme")
+                return
             for i in range(len(clusts)):
                 for n in clusts[i]:
                     table.append((i, n, 'gene'))
             df = pd.DataFrame.from_records(table)
             ont = cls.from_table(df, clixo_format=True)
             ont.add_root('ROOT', inplace=True)
-            return ont, quality
+            return ont
         elif method == 'infomap':
-            pass
+            raise Exception('Infomap integration is under development')
         else:
             raise Exception("Unsupported method of community detection")
         return
