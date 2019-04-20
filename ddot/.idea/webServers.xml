@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="b5f33660-5036-4296-b431-e21e04b42c88" name="ideker" url="http://grenache.ucsd.edu">
+        <fileTransfer host="grenache.ucsd.edu" port="22" rootFolder="/cellar/users/f6zheng" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
