@@ -15,7 +15,7 @@ RUN pip install tulip-python ndex-dev
 
 RUN pip install simplejson mygene
 
-# RUN echo a ???
+RUN echo a
 
 RUN git clone -b 'v1.0' --depth 1 https://github.com/michaelkyu/ddot.git ddot
 
@@ -27,6 +27,3 @@ RUN mv ddot/examples /ddot_examples
 RUN rm -rf ddot
 
 WORKDIR /ddot_examples
-
-# new features v1.1
-RUN pip install louvain

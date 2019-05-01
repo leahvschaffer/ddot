@@ -5,5 +5,3 @@ networkx=1.11
 python-igraph
 ndex-dev
 tulip-python
-
-louvain
