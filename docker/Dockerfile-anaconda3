@@ -17,13 +17,15 @@ RUN pip install simplejson mygene
 
 RUN echo a
 
-RUN git clone -b 'v1.0' --depth 1 https://github.com/michaelkyu/ddot.git ddot
+RUN git clone -b 'fannewfeature' --depth 1 https://github.com/idekerlab/ddot.git ddot
 
-RUN cd ddot && make
-RUN cd ..
+#RUN cd ddot && make
+#RUN cd ..
 
 RUN pip install ddot/
 RUN mv ddot/examples /ddot_examples
 RUN rm -rf ddot
+
+RUN pip install louvain
 
 WORKDIR /ddot_examples

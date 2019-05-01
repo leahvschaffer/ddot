@@ -2001,7 +2001,7 @@ class Ontology(object):
                 for c in ont.parent_2_child[p]:
                     if term_hash[p] == term_hash[c]:
                         to_collapse.add(p)
-            
+
             if min_term_size is not None:
                 to_collapse = to_collapse | set([t for t, s in zip(ont.terms, ont.term_sizes) if s < min_term_size])
 
@@ -3220,6 +3220,13 @@ class Ontology(object):
 
     @classmethod
     def run_community_alg(cls, graph, method, **kwargs):
+        '''
+        
+        :param graph: 
+        :param method: 
+        :param kwargs: 
+        :return: 
+        '''
 
         def louvain_multiplex(graphs, partition_type, interslice_weight=0.1, **kwargs):
             layers, interslice_layer, G_full = louvain.time_slices_to_layers(graphs,
@@ -3365,9 +3372,6 @@ class Ontology(object):
                   graph,
                   alpha=0.0,
                   beta=None,
-                  # newman_modularity=None,
-                  # miyauchi_modularity=None,
-                  # stop_score=None,
                   min_dt=-10000000,
                   timeout=100000000,
                   square=False,
