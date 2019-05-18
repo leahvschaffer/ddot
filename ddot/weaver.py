@@ -335,7 +335,6 @@ class Weaver(object):
         for i, j in gen:
             A = L[i]; B = L[j]
             CI, LA, LB = containment_indices(A, B)
-
             isileaf = i == len(L)-1
             isjleaf = j == len(L)-1
 
@@ -349,11 +348,10 @@ class Weaver(object):
                     if C >= cutoff:
                         na = (i, la)
                         nb = (j, lb)
-
-                        # na is named differently if is a leaf. 
+                        # na is named differently if is a leaf.
                         if isileaf:
                             na = terminals[la]
-                            G.add_edge(nb, na, weight=C)
+                            G.add_edge(nb, na, weight=C) # TODO: how does add_edge use a tuple (maybe just use the first element?)
                         elif isjleaf:
                             nb = terminals[lb]
                             G.add_edge(na, nb, weight=C)
@@ -365,6 +363,7 @@ class Weaver(object):
                                     G.remove_edge(na, nb)
                             else:
                                 G.add_edge(nb, na, weight=C)
+                        # print(G.nodes(data=True)) # TODO: so node ID is a tuple. How strange. Hmm. But can indeed be distinugished from leaf nodes.
 
         # remove grandparents (redundant edges)
         redundant = []
@@ -410,7 +409,7 @@ class Weaver(object):
                 # weight (CI) * node_size gives the size of the union between the node and the parent
                 ranked_edges = [((x[0], node), x[1]*node_size) for x in sorted(zip(parents, weights, pref), 
                                             key=lambda x: (x[1], x[2]), reverse=True)]
-                secondary.extend(ranked_edges[1:])
+                secondary.extend(ranked_edges[1:]) # TODO: this redundant sorting may create speed problem
 
         secondary.sort(key=lambda x: x[1], reverse=True)
 
@@ -611,7 +610,7 @@ def containment_indices(A, B):
     shape = (len(LA), len(LB))
     CI = np.zeros(shape)
     for i, a in enumerate(LA):
-        BinA = [B[i] for i in range(len(A)) if A[i]==a]
+        BinA = [B[k] for k in range(len(A)) if A[k]==a]
         counter = Counter(BinA)
         for b in counter:
             j = LB.index(b)

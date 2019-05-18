@@ -3629,6 +3629,24 @@ class Ontology(object):
 
         return ont
 
+    # Added in V2
+    def to_weaver(self):
+        '''
+        transform DDOT content to the input format of weaver. If there are multiple 3-col files, concatenate them and read in as one Ontology object first.
+        :return: P; a list, each element is a cluster, which contains 0 and 1 with the order of genes, 1 indicate a given gene belong to the current cluster. 
+        '''
+        self.propagate('forward', inplace=True)
+        n_genes = len(self.genes)
+        P = []
+        for t, ginds in self.term_2_gene:
+            arr = np.zeros(n_genes, dtype=int)
+            for i in ginds:
+                arr[i] = 1
+            arr = ''.join(map(str, list(arr)))
+            P.append(arr)
+        return P
+
+
     def to_ndex(self,
                 ndex_user,
                 ndex_pass,

@@ -19,6 +19,8 @@ from ndex.networkn import NdexGraph
 import ddot
 import ddot.config
 
+
+
 def print_time(*s):
     print(' '.join(map(str, s)), datetime.today())
     sys.stdout.flush()
