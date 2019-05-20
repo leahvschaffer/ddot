@@ -4,6 +4,7 @@ import networkx as nx
 from itertools import product
 from collections import Counter
 from math import floor
+import time
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -322,7 +323,7 @@ class Weaver(object):
         terminals = self.terminals
         n_nodes = self.n_terminals
 
-        L.append(list(range(n_nodes)))
+        L.append(list(range(n_nodes))) #TODO: why
 
         rng = range(len(L))
         if assume_levels:
@@ -331,8 +332,13 @@ class Weaver(object):
             gen = ((i, j) for i, j in product(rng, rng) if i != j)
     
         # find all potential parents
+        start_time = time.time()
+
         G = nx.DiGraph()
         for i, j in gen:
+            print(i, j)
+            if i == len(L)-1:
+                pass
             A = L[i]; B = L[j]
             CI, LA, LB = containment_indices(A, B)
             isileaf = i == len(L)-1
@@ -365,6 +371,9 @@ class Weaver(object):
                                 G.add_edge(nb, na, weight=C)
                         # print(G.nodes(data=True)) # TODO: so node ID is a tuple. How strange. Hmm. But can indeed be distinugished from leaf nodes.
 
+        elapsed_time = time.time() -start_time
+        print('Finish constructing graph. Time elapsed: {}'.format(elapsed_time))
+
         # remove grandparents (redundant edges)
         redundant = []
         for node in G.nodes():
@@ -382,6 +391,9 @@ class Weaver(object):
                             redundant.append((b, node))
 
         G.remove_edges_from(redundant)
+
+        elapsed_time = time.time() - start_time
+        print('Finish removing redundant edges. Time elapsed: {}'.format(elapsed_time))
 
         self._full = G
         
@@ -412,6 +424,9 @@ class Weaver(object):
                 secondary.extend(ranked_edges[1:]) # TODO: this redundant sorting may create speed problem
 
         secondary.sort(key=lambda x: x[1], reverse=True)
+
+        elapsed_time = time.time() - start_time
+        print('Finish finding secondary edges. Time elapsed: {}'.format(elapsed_time))
 
         self._secondary = secondary
 
