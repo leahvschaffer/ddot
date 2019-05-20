@@ -1,10 +1,11 @@
 import numpy as np
 import networkx as nx
 
-from itertools import product
+from itertools import product, combinations
 from collections import Counter
 from math import floor
 import time
+from ddot import *
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -298,6 +299,27 @@ class Weaver(object):
         # pick parents
         T = self.pick(top)
 
+        # record all relationships
+        boolean = self.boolean
+        genes = self.terminals
+        relations = []
+        for l in range(len(L)):
+            for i in range(len(l)):
+                if boolean:
+                    if not boolize(L[l][i]):
+                        continue
+                    else:
+                        rel = (genes[i], l, 'Gene-Term')
+                        relations.append(rel)
+                else:
+                    node = (l, L[l][i])
+                    rel = (genes[i], '%s_%s'%node, 'Gene-Term')
+                    relations.append(rel)
+        
+        #TODO: add term-term relations
+
+
+
         return T
 
     def build(self, **kwargs):
@@ -323,7 +345,7 @@ class Weaver(object):
         terminals = self.terminals
         n_nodes = self.n_terminals
 
-        L.append(list(range(n_nodes))) #TODO: why
+        # L.append(list(range(n_nodes))) #TODO: why? this is very slow
 
         rng = range(len(L))
         if assume_levels:
@@ -337,63 +359,78 @@ class Weaver(object):
         G = nx.DiGraph()
         for i, j in gen:
             print(i, j)
-            if i == len(L)-1:
-                pass
+            # if i == len(L)-1:
+            #     print(i, j)
             A = L[i]; B = L[j]
+
+            # CI, LA, LB = containment_indices(A, B)
+            # isileaf = i == len(L)-1
+            # isjleaf = j == len(L)-1
+
+            # if (isileaf==False) and (isjleaf==False):
             CI, LA, LB = containment_indices(A, B)
-            isileaf = i == len(L)-1
-            isjleaf = j == len(L)-1
 
             for a, la in enumerate(LA):
-                if boolean and not isileaf and not boolize(la):
+                if boolean and not boolize(la): # so 0 will not be compared, good
                     continue
                 for b, lb in enumerate(LB):
-                    if boolean and not isjleaf and not boolize(lb): 
+                    if boolean and not boolize(lb):
                         continue
                     C = CI[a, b]
                     if C >= cutoff:
                         na = (i, la)
                         nb = (j, lb)
                         # na is named differently if is a leaf.
-                        if isileaf:
-                            na = terminals[la]
-                            G.add_edge(nb, na, weight=C) # TODO: how does add_edge use a tuple (maybe just use the first element?)
-                        elif isjleaf:
-                            nb = terminals[lb]
-                            G.add_edge(na, nb, weight=C)
-                        else:
-                            if (na, nb) in G.edges():
-                                C0 = G[na][nb]['weight']
-                                if C > C0:
-                                    G.add_edge(nb, na, weight=C)
-                                    G.remove_edge(na, nb)
-                            else:
+                        # if isileaf:
+                        #     na = terminals[la]
+                        #     G.add_edge(nb, na, weight=C) # TODO: how does add_edge use a tuple (maybe just use the first element?)
+                        # elif isjleaf:
+                        #     nb = terminals[lb]
+                        #     G.add_edge(na, nb, weight=C)
+                        # else:
+                        if (na, nb) in G.edges(): # this only happens when assume_levels=False
+                            C0 = G[na][nb]['weight']
+                            if C > C0:
                                 G.add_edge(nb, na, weight=C)
-                        # print(G.nodes(data=True)) # TODO: so node ID is a tuple. How strange. Hmm. But can indeed be distinugished from leaf nodes.
+                                G.remove_edge(na, nb)# change the direction of edge
+                        else:
+                            G.add_edge(nb, na, weight=C)
+                    # print(G.nodes(data=True)) # TODO: so node ID is a tuple. How strange. Hmm. But can indeed be distinugished from leaf nodes.
 
         elapsed_time = time.time() -start_time
-        print('Finish constructing graph. Time elapsed: {}'.format(elapsed_time))
+        print('Finish constructing graph. Time elapsed: {:.2f}'.format(elapsed_time))
 
         # remove grandparents (redundant edges)
+        # redundant = []
+        # for node in G.nodes():
+        #     parents = [_ for _ in G.predecessors(node)]
+        #
+        #     for a, b in combinations(parents, 2):
+        #         # for b in parents: # does this double count?
+        #         #     if neq(a, b):
+        #         if (a, b) in G.edges():
+        #             # a is a grandparent
+        #             redundant.append((a, node))
+        #             break
+        #         if (b, a) in G.edges():
+        #             # b is a grandparent
+        #             redundant.append((b, node))
+        #
+        # elapsed_time = time.time() - start_time
+        # print('Finish removing redundant edges. Removed {} redundant edges. Time elapsed: {}'.format(
+        #     len(redundant), elapsed_time))
+
+        # remove redundant edges method 2 (results are different to method 1, but I think method 2 is right
         redundant = []
-        for node in G.nodes():
-            parents = [_ for _ in G.predecessors(node)]
-
-            for a in parents:
-                for b in parents:
-                    if neq(a, b):
-                        if (a, b) in G.edges():
-                            # a is a grandparent
-                            redundant.append((a, node))
-                            break
-                        if (b, a) in G.edges():
-                            # b is a grandparent
-                            redundant.append((b, node))
-
-        G.remove_edges_from(redundant)
+        for (a, b) in G.edges():
+            simple_paths = [_ for _ in nx.all_simple_paths(G, source=a, target=b)]
+            if len(simple_paths) > 1:
+                redundant.append((a, b))
 
         elapsed_time = time.time() - start_time
-        print('Finish removing redundant edges. Time elapsed: {}'.format(elapsed_time))
+        print('Finish removing redundant edges. Removed {} redundant edges. Time elapsed: {:.2f}'.format(len(redundant),
+                                                                                                         elapsed_time))
+        G.remove_edges_from(redundant)
 
         self._full = G
         
@@ -405,7 +442,7 @@ class Weaver(object):
                 node_size = self.node_size(node)
                 weights = [G.edge[p][node]['weight'] for p in parents]
 
-                # preference if multiple best
+                # preference if multiple best (prefer lower levels)
                 if self.assume_levels:
                     pref = [p[0] for p in parents]
                 else:
@@ -421,7 +458,7 @@ class Weaver(object):
                 # weight (CI) * node_size gives the size of the union between the node and the parent
                 ranked_edges = [((x[0], node), x[1]*node_size) for x in sorted(zip(parents, weights, pref), 
                                             key=lambda x: (x[1], x[2]), reverse=True)]
-                secondary.extend(ranked_edges[1:]) # TODO: this redundant sorting may create speed problem
+                secondary.extend(ranked_edges[1:])
 
         secondary.sort(key=lambda x: x[1], reverse=True)
 
@@ -468,13 +505,15 @@ class Weaver(object):
             G.remove_edges_from(removed_edges)
 
         # prune tree
-        T = prune(G)
+        # T = prune(G)
 
-        self.hier = T
+        # collapse node
 
-        if self.assume_levels:
+        self.hier = G
+
+        if self.assume_levels:# what is this for? looks like only used in visualization
             self.stuff_dummies()
-        return T
+        return G # gene are not assigned to clusters yet; not "collapsed" yet
 
     def show(self, **kwargs):
         """Visualize the hierarchy using networkx/graphviz hierarchical layouts.
@@ -663,7 +702,7 @@ def neq(a, b):
         return True
     return r
 
-def prune(T):
+def prune(T): # similar to "collapse" in DDOT
     """Removes the nodes with only one child and the nodes that have no terminal 
     nodes (e.g. genes) as descendants."""
 
@@ -695,7 +734,7 @@ def prune(T):
             w2 = T[node][child]['weight']
 
             T.remove_node(node)
-            T.add_edge(parent, child, weight=w1 + w2)
+            T.add_edge(parent, child, weight=w1 + w2) # why is the weight?
     return T
 
 def show_hierarchy(T, **kwargs):
