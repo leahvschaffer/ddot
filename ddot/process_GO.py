@@ -3,6 +3,10 @@ from ddot import *
 import mygene
 import pandas as pd
 
+ndex_server = raw_input('http://www.ndexbio.org or http://test.ndexbio.org:')
+ndex_user = raw_input('Enter your username:')
+ndex_pass = raw_input('Enter your password:')
+
 now = datetime.now().strftime("%Y%m%d")
 
 dirname = 'GeneOntology_{}'.format(now)
@@ -83,6 +87,20 @@ go_human_symbol = go_human_symbol.collapse_ontology(method='python')
 # need re-route of edges (why not handled by collapseOntology?)
 
 
+# remove indirect connection
+graph = go_human_symbol.to_igraph()
+graph.es['weight'] = -1
+for p in go_human_symbol.parent_2_child:
+    children =[c for c in go_human_symbol.parent_2_child[p]]
+    for c in children: # cannot do this ! pointer leaked
+        long_path = graph.shortest_paths(c, p, weights='weight')
+        if long_path[0][0] != -1:
+            go_human_symbol.parent_2_child[p].remove(c)
+            go_human_symbol.child_2_parent[c].remove(p)
+
+go_human_symbol.propagate('reverse', inplace=True)
+
+
 go_human_symbol = go_human_symbol.rename(genes=uniprot_2_symbol.to_dict())
 print(go_human_symbol)
 # Write GO to file
@@ -92,9 +110,6 @@ dict_term_name = pd.read_table('goID_2_name.tab', index_col=0, header=None)[1].t
 go_human_symbol.node_attr['Label'] = pd.Series(dict_term_name)
 # upload to NDEx
 # ndex_server = input()
-ndex_server = raw_input('http://www.ndexbio.org or http://test.ndexbio.org:')
-ndex_user = raw_input('Enter your username:')
-ndex_pass = raw_input('Enter your password:')
 
 url, ont_ndexgraph = go_human_symbol.to_ndex(name=dirname + '_' + aspect,
                                  ndex_server=ndex_server, ndex_user=ndex_user, ndex_pass=ndex_pass,

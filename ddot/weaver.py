@@ -299,7 +299,7 @@ class Weaver(object):
         # pick parents
         T = self.pick(top)
 
-        # record all relationships
+        # record all relationships (think about a non_ddot solution)
         boolean = self.boolean
         genes = self.terminals
         relations = []
@@ -315,7 +315,7 @@ class Weaver(object):
                     node = (l, L[l][i])
                     rel = (genes[i], '%s_%s'%node, 'Gene-Term')
                     relations.append(rel)
-        
+
         #TODO: add term-term relations
 
 
