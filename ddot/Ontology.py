@@ -26,7 +26,7 @@ from scipy.stats import hypergeom
 import ndex.client as nc
 from ndex.networkn import NdexGraph
 import ndex.beta.layouts as layouts
-
+        
 import ddot
 import ddot.config
 from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, nx_to_NdexGraph, NdexGraph_to_nx, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
@@ -1041,8 +1041,8 @@ class Ontology(object):
                     merge.loc[node, 'Size'] = merge.loc[new_2_orig[node], 'Size']
                 elif orig in ont.terms_index:
                     merge.loc[node, 'Size'] = ont.term_sizes[ont.terms_index[orig]]
-        
-        # Append attributes for the new nodes
+            
+        # Append attributes for the new nodes        
         try:
             # Used for pandas version >= 0.23
             ont_collect.node_attr = pd.concat([ont.node_attr, merge], axis=0, sort=True)
@@ -1646,7 +1646,7 @@ class Ontology(object):
                 # Used for pandas version >= 0.23
                 edge_attr = pd.concat([edge_attr, mapping_attr], sort=True)
             except:
-                edge_attr = pd.concat([edge_attr, mapping_attr])
+            edge_attr = pd.concat([edge_attr, mapping_attr])
             mapping = mapping.loc[:,[mapping_child, mapping_parent]]
             hierarchy = table.loc[:,[child, parent]]
 
@@ -1676,7 +1676,7 @@ class Ontology(object):
                    propagate=propagate,
                    verbose=verbose,
                    **kwargs)
-
+    
     @classmethod
     def from_scipy_linkage(cls, Z):
         """Creates an Ontology object from a linkage matrix created by scipy's
@@ -1685,7 +1685,7 @@ class Ontology(object):
 
         """
         import scipy.cluster.hierarchy
-                
+
         rootnode, nodelist = scipy.cluster.hierarchy.to_tree(Z, rd=True)
         leaves = set(scipy.cluster.hierarchy.leaves_list(Z))
         hierarchy, mapping = [], []
@@ -1704,7 +1704,7 @@ class Ontology(object):
                 else:
                     hierarchy.append((v_id, child))
         return cls(hierarchy, mapping, parent_child=True)
-    
+
     @classmethod
     def from_ndex(cls,
                   ndex_uuid,
@@ -1713,7 +1713,6 @@ class Ontology(object):
                   ndex_server=None,
                   edgetype_attr=None,
                   edgetype_value=None):
-
         """Reads an Ontology stored on NDEx. Gene and terms are distinguished
         according by an edge attribute.
 
@@ -1927,7 +1926,7 @@ class Ontology(object):
         return ont
 
     def collapse_ontology(self,                          
-                          method='mhkramer',
+                          method='python',
                           to_keep=None,
                           min_term_size=2,
                           verbose=True):
@@ -2043,9 +2042,9 @@ class Ontology(object):
 
         if len(common_genes) > 0:
             ont1 = ont1.delete(to_delete=set(ont1.genes) - common_genes, inplace=False)
-            ont1_collapsed = ont1.collapse_ontology(method='mhkramer')
+            ont1_collapsed = ont1.collapse_ontology()
             ont2 = ont2.delete(to_delete=set(ont2.genes) - common_genes, inplace=False)
-            ont2_collapsed = ont2.collapse_ontology(method='mhkramer')
+            ont2_collapsed = ont2.collapse_ontology()
         else:
             raise Exception('No common genes between ontologies')
 
@@ -2112,7 +2111,7 @@ class Ontology(object):
                 # Used for pandas version >= 0.23
                 tmp = pd.concat([df, new_connections], ignore_index=True, sort=True)
             except:
-                tmp = pd.concat([df, new_connections], ignore_index=True)
+            tmp = pd.concat([df, new_connections], ignore_index=True)
             df = tmp[df.columns]
 
         ont = Ontology.from_table(df)
@@ -2439,7 +2438,6 @@ class Ontology(object):
                                clixo_format=False)
 
             df.replace({self.EDGETYPE_ATTR : {self.GENE_TERM_EDGETYPE : 'gene', self.CHILD_PARENT_EDGETYPE : 'default'}}, inplace=True)
-            
             if output is not None:
                 df.to_csv(output, header=False, index=False, sep='\t')
             return df
@@ -2852,7 +2850,7 @@ class Ontology(object):
                       ancestors=None,
                       sparse=False,
                       weights=None,
-                      chunk_size=500):
+                      chunk_size=500):# TODO: when ancestors are specified, the results become negative
         """Computes the lengths of the longest directed paths between all pairs
         of terms.
 
@@ -3199,346 +3197,6 @@ class Ontology(object):
                         edge_attr_names)
         return summary
 
-    @classmethod
-    def infer_ontology(cls,
-                       graph,
-                       method,
-                       **kwargs):        
-        if method.lower()=='clixo_0.3':
-            kwargs["clixo_version"] = 0.3
-            return cls.run_clixo(graph, **kwargs)
-        elif method.lower()=='clixo_1.0':
-            kwargs["clixo_version"] = 1.0
-            return cls.run_clixo(graph, **kwargs)
-        elif method.lower()=='scipy.linkage':
-            return cls.run_scipy_linkage(graph, **kwargs)
-        else:
-            raise Exception("Unsupported method for inferring ontology")
-
-    @classmethod
-    def run_scipy_linkage(cls,
-                          graph,
-                          linkage_method='single',                          
-                          leaves=None,
-                          **kwargs):
-        """Runs scipy's agglomerative clustering methods for inferring binary
-        trees. Arguments are passed directly to the
-        `scipy.cluster.hierarchy.linkage` function.
-
-        Parameters
-        ----------
-        graph
-
-            Passed as the `y` argument to the `linkage` function.
-
-        linkage_method
-
-            Passed as the `method` argument to the `linkage` function.
-
-        leaves : list
-
-            A list of the gene names represented in `graph` (listed in
-            the same order).
-
-        kwargs
-
-            Passed as extra arguments with the same argument names to the `linkage` function.
-        
-        Returns
-        --------
-        : ddot.Ontology.Ontology
-        
-        See `https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage` for more details.
-
-        """
-
-        import scipy.cluster.hierarchy
-        from scipy.cluster.hierarchy import linkage
-
-        Z = linkage(graph, method=linkage_method, **kwargs)
-
-        ont = cls.from_scipy_linkage(Z)
-
-        if leaves is None:
-            ont.rename(terms=lambda x: 'S:%s' % x,
-                       inplace=True)
-        else:
-            leaves_dict = {str(i) : x for i, x in enumerate(leaves)}
-            ont.rename(genes=leaves_dict,
-                       terms=lambda x: 'S:%s' % x,
-                       inplace=True)
-
-        return ont
-    
-    @classmethod
-    def run_clixo(cls,
-                  graph,
-                  alpha=0.0,
-                  beta=None,
-                  newman_modularity=None,
-                  miyauchi_modularity=None,
-                  stop_score=None,
-                  min_dt=-10000000,
-                  timeout=100000000,
-                  square=False,
-                  square_names=None,
-                  output=None,
-                  output_log=None,
-                  clixo_cmd=None,
-                  clixo_version=None,
-                  verbose=False, 
-                  debug=False):
-        """Runs the CLIXO algorithm and returns the result as an Ontology object.
-
-        Acts as a wrapper for the C++ packages for CLIXO v0.3 (`https://mhk7.github.io/clixo_0.3/`) and v1.0 (`https://github.com/fanzheng10/CliXO`).
-        
-        Parameters
-        ----------
-
-        graph : pandas.DataFrame
-
-           Gene-gene similarities represented as a 3-column
-           pandas.DataFrame (sparse) or square-shaped pandas.DataFrame
-           (square format)
-
-        alpha : float
-
-           CLIXO alpha parameter
-
-        beta : float
-
-           CLIXO beta parameter
-
-        min_dt : float
-
-           Minimum similarity score
-
-        timeout : int
-
-           Maximum time (in seconds) allowed to run CLIXO
-
-        square : bool
-        
-           If True, then <graph> is interpreted as a square-shaped
-           DataFrame. Otherwise, it is interpreted as a 3-column
-           DataFrame.
-
-        square_names : array-like (optional)
-
-           The names of the rows and columns in <graph>. Only used
-           when square==True.
-
-        output : str
-
-           Filename to write the resulting Ontology as a
-           table. Default: don't write to file
-
-        output_log : str
-
-           Filename to write log information from CLIXO. Default:
-           don't write to file
-
-        Returns
-        --------
-        : ddot.Ontology.Ontology
-
-        """
-
-        rerun = False
-        
-        if output is None:
-            output_file = tempfile.NamedTemporaryFile('w', delete=False)
-            output = output_file.name
-            if verbose:
-                print('temp output:', output)
-            rerun, delete_output = True, True
-        else:
-            delete_output = False
-                
-        if not (isinstance(graph, str) and os.path.exists(graph)):
-
-            if square:
-                assert graph.shape[1] == graph.shape[0]
-                graph_sq = pd.DataFrame(graph, index=square_names, columns=square_names)
-                graph = melt_square(graph_sq)
-
-            # Write graph into a temporary file.
-            # Assumes that <graph> is a list of 3-tuples (parent, child, score)
-            with tempfile.NamedTemporaryFile('w', delete=False) as graph_file:
-                try:
-                    graph.to_csv(graph_file, sep='\t', header=False, index=False)
-                except:
-                    graph_file.write('\n'.join(['\t'.join([str(x[0]),str(x[1]),str(x[2])]) for x in graph]) + '\n')
-            graph = graph_file.name
-            if verbose:
-                print('temp graph:', graph)
-            rerun, delete_graph = True, True
-        else:
-            delete_graph = False
-
-        if debug:
-            delete_graph = False
-            
-        if not (isinstance(output_log, str) and os.path.exists(output_log)):
-            output_log_file = tempfile.NamedTemporaryFile('w', delete=False)
-            output_log = output_log_file.name
-            if verbose:
-                print('temp output log:', output_log)
-            rerun, delete_output_log = True, True
-        else:
-            delete_output_log = False
-
-        if debug:
-            delete_output_log = False
-
-        if rerun:
-            try:
-                return cls.run_clixo(
-                    graph,
-                    alpha=alpha,
-                    beta=beta,
-                    newman_modularity=newman_modularity,
-                    miyauchi_modularity=miyauchi_modularity,
-                    stop_score=stop_score,
-                    min_dt=min_dt,
-                    timeout=timeout,
-                    output=output,
-                    output_log=output_log,
-                    clixo_cmd=clixo_cmd,
-                    clixo_version=clixo_version,
-                    verbose=verbose,
-                    debug=debug)
-            finally:
-                if delete_output:
-                    os.remove(output)
-                if delete_output_log:
-                    os.remove(output_log)
-                if delete_graph:
-                    os.remove(graph)
-
-        top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddot)))
-
-        if clixo_version is None:
-            clixo_version = 0.3
-
-        if clixo_version == 0.3:
-            if clixo_cmd is None:
-                clixo_cmd = os.path.join(top_level, 'clixo_0.3', 'clixo')
-
-            if beta is None:
-                beta = 1.0
-                
-            cmd = ("""{0} {1} {2} {3} """.format(clixo_cmd, graph, alpha, beta) +
-                   """ | tee {}""".format(output_log))            
-        elif clixo_version == 1.0:
-            if clixo_cmd is None:
-                raise Exception(
-                    """Please install CliXO 1.0 from https://github.com/fanzheng10/CliXO,"""
-                    """and specify the path on your machine to the CliXO executable file.""")
-
-            if alpha is None:
-                raise Exception(
-                    """For CliXO v1.0, alpha must be set to a positive (non-zero) value.""")
-                
-            # Format optional parameters
-            if beta is None:
-                beta = ""
-            else:
-                beta = '-b %s' % beta                
-            if newman_modularity is None:
-                newman_modularity = ""            
-            else:
-                newman_modularity = '-m %s' % newman_modularity
-            if miyauchi_modularity is None:
-                miyauchi_modularity = ""                
-            else:
-                miyauchi_modularity = '-z %s' % miyauchi_modularity
-            if stop_score is None:
-                stop_score = ""
-            else:
-                stop_score = '-s %s' % stop_score
-
-            cmd = ("""{} -i {} -a {} {} {} {} {}""".format(clixo_cmd, graph, alpha, beta, newman_modularity, miyauchi_modularity, stop_score) + 
-                   """ | tee {}""".format(output_log))
-            
-        if verbose:
-            print('CLIXO command:', cmd)
-
-        p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, bufsize=1)
-        
-        curr_dt = None
-        start = time.time()
-
-        ## Asynchronous readout of the command's output
-        while p.poll() is None:
-
-            # Break if passed the maximum processing time
-            if time.time() - start > timeout:
-                if verbose:
-                    time_print(
-                        ('Killing process %s (OUT OF TIME). '
-                         'Current dt: %s: Output: %s') % (p.pid, curr_dt, output_log))
-                break
-
-            line = p.stdout.readline().decode().rstrip()
-            
-            # Break if the min_dt has been met
-            if '# dt: ' in line:
-                curr_dt = float(line.split('# dt: ')[1])
-                if curr_dt < min_dt:
-                    if verbose:
-                        time_print(
-                            ('Killing process %s (BEYOND MIN THRESHOLD). '
-                             'Current dt: %s, min_dt: %s') % (p.pid, curr_dt, min_dt))
-                    break
-
-            # datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            # If line was empty, then sleep a bit
-            if line=='':  time.sleep(0.01)
-
-        # if not os.path.isfile(table):
-        #     raise Exception(
-        #         "CliXO script did not produce a file. One of the common reasons is the"
-        #         "choice of alpha and beta parmaeters. Consider setting"
-        #         "beta=0.5 and alpha to be between 1% to 1% of the"
-        #         "distance from the minimum or maximum gene similarity"
-        #         "scores. For example, if the gene similarities range"
-        #         "between 0 and 1, then consider alpha's between 0.01"
-        #         "and 0.1")
-
-        if p.poll() is None:
-            if verbose: time_print('Killing process %s. Output: %s' % (p.pid, output_log))
-            p.kill()  # Kill the process
-
-            # Extract ontology with extractOnt
-            p_ext = Popen('%s %s 0 0 %s' % (extract_cmd, output_log, output),
-                          shell=True, stdout=PIPE, stderr=STDOUT)
-            p_ext.communicate()
-        else:
-            if verbose: time_print('Extracting by grep -v #')
-
-            # Extract ontology with grep -v '#'
-            p_ext = Popen("grep -v '#' %s | grep -v '@' > %s" % (output_log, output), shell=True)
-            p_ext.communicate()
-
-        if verbose: time_print('Elapsed time (sec): %s' % (time.time() - start))
-        
-        ont = cls.from_table(output, clixo_format=True)
-        ont.rename(terms=lambda x: 'S:%s' % x, inplace=True)
-        ont.edge_attr.rename(columns={'3':'CLIXO_score'}, inplace=True)
-
-        # Copy the "CliXO score" edge attribute into a "Parent weight" node attribute
-        ont.node_attr = ont.edge_attr.copy()
-        ont.node_attr.index = ont.node_attr.index.droplevel(0)
-        ont.node_attr.rename(columns={'CLIXO_score':'Parent weight'}, inplace=True)
-        ont.node_attr.index.name = 'Node'
-        ont.node_attr = ont.node_attr.loc[~ ont.node_attr.index.duplicated()]
-
-        if verbose: print('Ontology:', ont)
-
-        return ont
-
     def to_ndex(self,
                 ndex_user,
                 ndex_pass,
@@ -3744,58 +3402,19 @@ class Ontology(object):
                 if 'Vis:Border Paint' not in data:
                     data['Vis:Border Paint'] = '#000000'
 
-                # # Deprecated: use of 'Vis:Size' attribute. HiView currently sets size according to 'Size' attribute
-                # if 'Vis:Size' not in data:
-                #     if 'Size' in data and data['Size'] > 0:
-                #         data['Vis:Size'] = 20 * float(1. + np.log10(data['Size']))
-                #     else:
-                #         data['Vis:Size'] = 20
-
-                # Set links to subnetworks supporting each term
-                if term_2_uuid:
-                    if v in term_2_uuid:
-                        data['ndex:internalLink'] = '[%s](%s)' % (data['Label'], term_2_uuid[v])
-                    elif ('Original_Name' in data) and (data['Original_Name'] in term_2_uuid):
-                        data['ndex:internalLink'] = '[%s](%s)' % (data['Label'], term_2_uuid[data['Original_Name']])
-
-#                 if ('Hidden' in data) and (data['Hidden']):
-#                     print('hiding %s' % v)
-# #                    data['Vis:Size'] = 100
-#                     data['Size'] = 1
-
             for u, v, data in G.edges(data=True):
                 if 'Vis:Visible' not in data and 'Is_Tree_Edge' in data:
                     data['Vis:Visible'] = data['Is_Tree_Edge']=='Tree'
 
-            # # Deprecated: use of 'Vis:Size' attribute. HiView currently sets size according to 'Size' attribute
-            # # Need to change this later
-            # if hasattr(G, 'pos'):
-            #     # Rescale node sizes so that they don't overlap
-            #     base_size = 20.
-            #     desired_ratio = 0.5                
-            #     pos = G.pos
-            #     max_ratio = 0
-            #     for v, v_data in G.nodes(data=True):
-            #         v_size = v_data['Vis:Size']
-            #         for u in G.predecessors(v):                        
-            #             u_size = G.node[u]['Vis:Size']
-            #             dist = math.sqrt(sum([(a-b)**2 for a, b in zip(pos[v], pos[u])]))
-            #             if dist > 0:
-            #                 ratio = ((v_size + u_size) / 2.) / dist
-            #                 max_ratio = max(max_ratio, ratio)
-            #     if max_ratio > desired_ratio:
-            #         for v, data in G.nodes(data=True):
-            #             data['Vis:Size'] = (data['Vis:Size'] - base_size) * (desired_ratio / max_ratio) + base_size
-                    
             style = ddot.config.get_passthrough_style()
         else:
             raise Exception('Unsupported style')
                 
-        # # Set links to subnetworks supporting each term
-        # if term_2_uuid:
-        #     for t in self.terms:        
-        #         if t in term_2_uuid:
-        #             G.node[t]['ndex:internalLink'] = '[%s](%s)' % (G.node[t]['Label'], term_2_uuid[t])
+        # Set links to subnetworks supporting each term
+        if term_2_uuid:
+            for t in self.terms:        
+                if t in term_2_uuid:
+                    G.node[t]['ndex:internalLink'] = '[%s](%s)' % (G.node[t]['Label'], term_2_uuid[t])
 
         # # Change Original_Name to node indices
         # name_2_idx = {data['name'] : v for v, data in G.nodes(data=True)}
@@ -3808,7 +3427,7 @@ class Ontology(object):
         if name is not None:
             G.set_name(name)
         if description is not None:
-            G.set_network_attribute('description', description)
+            G.set_network_attribute('Description', description)
             
         if style:
             import ndex.beta.toolbox as toolbox
@@ -3954,7 +3573,7 @@ class Ontology(object):
                             z_score=False,
                             spring_feature=None, spring_weight=1.0,
                             edge_groups=None,
-                            max_num_edges = -1,                            
+                            max_num_edges = -1,
                             verbose=False):
         """For each term in the ontology, upload a subnetwork of interactions
         between the genes in that term to NDEx.
@@ -4027,7 +3646,7 @@ class Ontology(object):
         start = time.time()
         g1, g2 = gene_columns[0] + '_lex', gene_columns[1] + '_lex'
 
-        features = [f for f in network.columns if f not in gene_columns]
+        features = [f for f in network.columns if (f not in gene_columns)]
         assert main_feature in features, 'A main feature of the network must be specified'
 
         network = network[features + gene_columns].copy()
@@ -4041,8 +3660,7 @@ class Ontology(object):
         network = network.loc[tmp, :]
         
         # Lexicographically sort gene1 and gene2 so that gene1 < gene2
-        network[g1], network[g2] = zip(*[(x,y) if x<y else (y,x) for x, y in zip(network[gene_columns[0]], network[gene_columns[1]])])
-        network_idx = {x : i for i, x in enumerate(zip(network[g1], network[g2]))}
+        # actually this may be redundant
 
         if z_score:
             for feat in features:
@@ -4097,11 +3715,9 @@ class Ontology(object):
                               if gp in network_idx]
 
             # New (Parent weight)
-            # (contributed by Fan Zheng)
             children = ont.parent_2_child[t]
             min_children_term_weights = -1
-            format_parent_weight = ('Parent weight' in ont.node_attr.columns.tolist()) and (len(children) >0)
-            if format_parent_weight:                
+            if ('Parent weight' in ont.node_attr.columns.tolist()) and (len(children) >0):
                 children_term_weights = []
                 for c in children:
                     if ont.node_attr.loc[c, 'Parent weight'] >0:
@@ -4112,11 +3728,15 @@ class Ontology(object):
 
             if len(gene_pairs_idx) > 0:
                 network_sub = network.iloc[gene_pairs_idx, :]
+                network_sub = network_sub.loc[network_sub[main_feature] >= ont.node_attr.loc[t, 'Parent weight']]
 
+                if max_num_edges != None:
+                    network_sub.sort_values(by=main_feature, ascending=False, inplace=True)
+                    network_sub = network_sub.iloc[:max_num_edges, :]
                 # New: apply some minimum string force so nodes will not fly away
-                if spring_feature != None:
-                    network_sub.loc[network_sub[spring_feature] < min_children_term_weights, spring_feature] = 0.5*min_children_term_weights
-                    network_sub[spring_feature] = network_sub[spring_feature] ** spring_weight
+                # if spring_feature != None:
+                #     network_sub.loc[network_sub[spring_feature] < min_children_term_weights, spring_feature] = 0.5*min_children_term_weights
+                #     network_sub[spring_feature] = network_sub[spring_feature] ** spring_weight
 
                 G_nx = nx.from_pandas_dataframe(network_sub, g1, g2,
                                                 edge_attr=features)
@@ -4125,20 +3745,14 @@ class Ontology(object):
 
                 G_nx.add_nodes_from(list(set(genes) - set(G_nx.nodes())))
                 
-                # Annotate the membership of each gene to every child term
+                # Annotate the membership in children terms
                 children = ont.parent_2_child[t]
-                df = pd.DataFrame({c : False for c in children}, index=genes, dtype=bool)                
+                df = pd.DataFrame({c : None for c in children}, index=genes, dtype=bool)
                 for c in children:
                     genes_in = [ont.genes[g] for g in ont.term_2_gene[c]]
+                    # for g in genes_in:
+                        # G_nx.node[g]['Group:'+c] = True
                     df.loc[genes_in, c] = True
-                    
-                # # For each gene that is directly connected to this
-                # # term, create a "Group" that contains only that gene.
-                # direct_genes = set(ont.term_2_gene[t]) - set(g for c in children for g in ont.term_2_gene[c])
-                # for g in direct_genes:
-                #     g_name = ont.genes[g]
-                #     df[g_name] = False
-                #     df.loc[g_name, g_name] = True
                 df.rename(columns=lambda x: 'Group:'+x, inplace=True)
                 ddot.utils.set_node_attributes_from_pandas(G_nx, df)
                 
@@ -4148,12 +3762,15 @@ class Ontology(object):
                 #     choices = df.loc[g, :].nonzero()
                 #     network_sq.loc[g, :].argmax()                    
 
+
                 G = nx_to_NdexGraph(G_nx)
+
                 G.set_name('%s supporting network for %s' % (name, t))
-                G.set_network_attribute('description', '%s supporting network for %s' % (name, t))
+                G.set_network_attribute('Description', '%s supporting network for %s' % (name, t))
                 G.set_network_attribute('Main Feature', main_feature)
                 for f in features:
-
+                    if (f == spring_feature) and (f != main_feature):
+                        continue
                     G.set_network_attribute('%s type' % f, feature_types[f])
                     if feature_types[f] == 'numeric':
                         G.set_network_attribute('%s min' % f, feature_mins[f])
@@ -4162,18 +3779,14 @@ class Ontology(object):
 #                    G.set_network_attribute('Group:' + c, True)
                 G.set_network_attribute('Group', '|'.join(children))
 
-                if format_parent_weight:
-                    # New: calculate the score threshold of this subnetwork
-                    # (contributed by Fan Zheng)
-                    G.set_network_attribute('Main Feature Default Cutoff', 0.4)
-                    G.set_network_attribute('Parent weight', float(ont.node_attr.loc[t, 'Parent weight']))
+                # New: calculate the score threshold of this subnetwork
+                G.set_network_attribute('Main Feature Default Cutoff', float(ont.node_attr.loc[t, 'Parent weight']))
+                G.set_network_attribute('Parent weight', float(ont.node_attr.loc[t, 'Parent weight']))
 
-                    if min_children_term_weights > 0:
-                        G.set_network_attribute('Children weight', '|'.join(['{:.3f}'.format(w) for w in children_term_weights]))
-                        G.set_network_attribute('Main Feature Default Cutoff', float(min_children_term_weights))
+                if min_children_term_weights > 0:
+                    G.set_network_attribute('Children weight', '|'.join(['{:.3f}'.format(w) for w in children_term_weights]))
+                    # G.set_network_attribute('Main Feature Default Cutoff', float(min_children_term_weights))
 
-                # New: annotate edge groups
-                # (contributed by Fan Zheng)
                 if isinstance(edge_groups, dict) and (len(edge_groups.keys()) > 0):
                     edge_group_string = []
                     for k, vs in edge_groups.iteritems():
@@ -4183,12 +3796,30 @@ class Ontology(object):
                     G.set_network_attribute('edge groups', edge_group_string)
 
 
+                # New: only keep the biggest compoent in the network
+                G = max(nx.weakly_connected_component_subgraphs(G), key=len)
+                # further remove degree == 1 nodes
+                if len(G.nodes()) > 6:
+                    low_deg_nodes = []
+                    for v, deg in G.degree().iteritems():
+                        if deg <= 1:
+                            low_deg_nodes.append(v)
+
+                    while len(low_deg_nodes) != 0:
+                        G.remove_nodes_from(low_deg_nodes)
+                        low_deg_nodes = []
+                        for v, deg in G.degree().iteritems():
+                            if deg <= 1:
+                                low_deg_nodes.append(v)
+
                 # New: compute a pre-layout to networks
-                # (contributed by Fan Zheng)
                 if spring_feature != None:
-                    G_cx = G.to_cx()
-                    G = NdexGraph(G_cx)
-                    layouts.apply_directed_flow_layout(G, node_width=50, weight=spring_feature)
+                    # G_cx = G.to_cx() # why converted back and forth
+                    # G = NdexGraph(G_cx)
+                    gsim = layouts._create_simple_graph(G)
+                    pos = nx.spring_layout(gsim, scale=200 * math.sqrt(gsim.number_of_nodes()), weight=spring_feature)
+                    G.pos = pos
+                    # layouts.apply_directed_flow_layout(G, node_width=50, weight=spring_feature)
 
 
                 start_upload = time.time()
@@ -4199,7 +3830,7 @@ class Ontology(object):
                 if verbose:
                     print(upload_idx,
                           'Term:', t,
-                          'Gene pairs:', len(gene_pairs_idx),
+                          'Gene pairs:', len(G_nx.edges()),
                           'Genes:', len(genes),
                           'Time:', round(time.time() - start, 4),
                           'Upload time:', round(upload_time, 4),
@@ -4319,51 +3950,6 @@ class Ontology(object):
         """Loads an Ontology object from a pickled state.""" 
         return pandas.io.pickle.read_pickle(file, compression=compression)
 
-    # def to_adjacency(self, include_genes=False):
-    #     """Returns the adjacency matrix between genes and terms.
-
-    #     Parameters
-    #     ----------
-    #     include_genes : bool
-                        
-    #         Include genes in the adjacency matrix such that the rows
-    #         (and columns) represent both genes and terms in the order
-    #         (self.genes + self.terms).
-
-    #     Returns
-    #     -------
-    #     : scipy.sparse.csr_matrix
-
-    #     """
-
-    #     edges = [(self.terms_index[c], self.terms_index[p]) for c in self.terms for p in self.child_2_parent.get(c, [])]
-    #     i, j = zip(*edges)
-    #     child_2_parent_adj = coo_matrix((np.ones(len(edges), np.bool), (i,j)), shape=(len(self.terms), len(self.terms)))
-    #     child_2_parent_adj = child_2_parent_adj.tocsr()
-
-    #     adj = child_2_parent_adj
-
-    #     if include_genes:
-    #         tmp = [self.gene_2_term[g] for g in self.genes]
-    #         indices = np.concatenate(tmp)
-    #         indptr = np.append(0, np.cumsum([len(x) for x in tmp]))
-    #         data = np.ones(indices.size, np.bool)
-    #         gene_2_term_adj = csr_matrix((data,indices,indptr), shape=(len(self.genes), len(self.terms)))
-
-    #         empty1 = csr_matrix((len(self.genes),len(self.genes))).astype(np.bool)
-    #         empty2 = csr_matrix((len(self.terms),len(self.genes))).astype(np.bool)
-                    
-    #         hstack, vstack = scipy.sparse.hstack, scipy.sparse.vstack
-            
-    #         adj = vstack([hstack([empty1, gene_2_term_adj]).tocsr(),
-    #                       hstack([empty2, adj]).tocsr()])
-    #         adj = adj.tocsr()
-
-    #         nodes = self.genes + self.terms
-    #     else:
-    #         nodes = self.terms
-            
-    #     return adj, nodes
 
     def __repr__(self):
         return self.summary()
