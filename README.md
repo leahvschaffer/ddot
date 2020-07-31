@@ -1,3 +1,10 @@
+# Update 1.0.1
+
+* Maintain the compatibility with HiView, which has evolved significantly after the original DDOT publication
+* A new script (`tohiview.py`) and a tutorial of uploading to HiView server has been added
+* Running `CliXO 0.3, 1.0` and `alignOntology` from DDOT is not longer supported, as they are legacy programs, and tend to take long running times. Please refer to the original repositories for these programs.
+
+
 # The Data-Driven Ontology Toolkit (DDOT)
 
 The Data-Driven Ontology Toolkit (DDOT) facilitates the inference, analysis, and visualization of biological hierarchies using a data structure called an ontology. 
