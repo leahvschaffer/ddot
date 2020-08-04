@@ -2,7 +2,7 @@
 
 * Maintain the compatibility with HiView, which has evolved significantly after the original DDOT publication
 * A new script (`tohiview.py`) and a tutorial of uploading to HiView server has been added
-* Running `CliXO 0.3`, `CliXO 1.0` and `alignOntology` from DDOT is not longer supported (to make this pacakge purely "Pythonic"). Please visit the original repositories of these programs.
+* Running `CliXO 0.3`, `CliXO 1.0` and `alignOntology` from DDOT is not longer supported (in order to make this package purely "Pythonic"). Please visit the original repositories of these programs.
 
 
 # The Data-Driven Ontology Toolkit (DDOT)
