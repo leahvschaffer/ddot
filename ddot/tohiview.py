@@ -157,7 +157,7 @@ if __name__ == "__main__":
     par.add_argument('--subnet_size', nargs = 2, default=[2, 500], type=int, help='minimum and maximum term size to show network support')
     par.add_argument('--node_attr', help='table file for attributes on systems')
     par.add_argument('--subnet_links',  help='data frame for network support')
-    par.add_argument('--rf_score', help = 'input file of CLIXO')
+    par.add_argument('--rf_score', help = 'integrated edge score')
     par.add_argument('--gene_attr', help='table file for attributes on genes')
     par.add_argument('--term_2_uuid', help='if available, reuse networks that are already on NDEX')
     par.add_argument('--visible_cols', nargs='*', help='a list, specified column names in the ode attribute file will be shown as subsystem information')
