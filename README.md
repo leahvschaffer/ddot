@@ -2,7 +2,7 @@
 
 * Maintain the compatibility with HiView, which has evolved significantly after the original DDOT publication
 * A new script (`tohiview.py`) and a tutorial of uploading to HiView server has been added
-* Running `CliXO 0.3, 1.0` and `alignOntology` from DDOT is not longer supported, as they are legacy programs, and tend to take long running times. Please refer to the original repositories for these programs.
+* Running `CliXO 0.3`, `CliXO 1.0` and `alignOntology` from DDOT is not longer supported (to make this pacakge purely "Pythonic"). Please visit the original repositories of these programs.
 
 
 # The Data-Driven Ontology Toolkit (DDOT)
@@ -54,17 +54,10 @@ The recommended method for installing these dependencies is to use the [Anaconda
 After dependencies are satisfied, download or clone this repository
 
   ```bash
-  git clone https://github.com/michaelkyu/ddot.git
+  git clone https://github.com/[Host_username]/ddot.git
   ```
   
-Next, compile C++ files for running [CliXO v0.3](https://github.com/mhk7/clixo_0.3) and an [ontology alignment algorithm](https://mhk7.github.io/alignOntology/). 
-
-  ```bash
-  cd /path/to/ddot_repository
-  make
-  ```
-  
-Finally, install ddot using `pip`. If you are installing within a conda virtual environment, remember to enter the environment with `source activate <environment_name>` before running `pip`.
+Install ddot using `pip`. If you are installing within a conda virtual environment, remember to enter the environment with `source activate <environment_name>` before running `pip`.
 
   ```bash
   pip install /path/to/ddot_repository
@@ -76,7 +69,7 @@ Finally, install ddot using `pip`. If you are installing within a conda virtual 
 * If `ddot` does not import successfully in a Python terminal, first check that the dependencies can be imported. In particular, check that `import ndex, networkx, igraph, tulip, numpy, scipy, pandas` works.
 * Please raise any other installation problems as an issue on this github repo.
   
-# Docker image
+# Docker image (v1.0)
 
 A Docker image of DDOT is located online at Docker Hub. To learn more about Docker, see https://docs.docker.com/get-started/
 
