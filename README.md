@@ -1,4 +1,4 @@
-# Update 1.0.1 (2020 summer)
+# Update in v1.0.1 (2020 summer)
 
 * Maintain the compatibility with HiView, which has evolved significantly after the original DDOT publication
 * A new script (`tohiview.py`) and a tutorial of uploading to HiView server has been added
