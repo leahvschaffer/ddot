@@ -5,6 +5,6 @@ Coarse-1	Fine-2	default
 Coarse-1	Fine-3	default
 Coarse-2	Fine-3	default
 Coarse-2	Fine-4	default
-Fine-1	A	gene
-Fine-1	B	gene
-Coarse-1	C	gene
+Fine-1	geneA	gene
+Fine-1	geneB	gene
+Coarse-1	geneC	gene
