@@ -41,7 +41,7 @@ def support_data_focus(pairs, rf_score, netlinks=None):
         gene1.append(g1)
         gene2.append(g2)
 
-    df = pd.DataFrame.from_items([('Gene1', gene1), ('Gene2', gene2)])
+    df = pd.DataFrame.from_dict(dict([('Gene1', gene1), ('Gene2', gene2)]))
     df_rf = pd.read_table(rf_score, sep='\t', header=None)
     if df_rf.shape[1] < 3:
         df_rf[2] = 1.0
@@ -75,10 +75,10 @@ def support_data_focus(pairs, rf_score, netlinks=None):
 
 def rename(ont, node_attr, col=None):
     term_names = sorted(ont.terms, key=lambda x: ont.term_sizes[ont.terms_index[x]])
-    term_names = map(str, term_names)
+    term_names = [str(t) for t in term_names]
     term_rename = {t: t for t in term_names}
     # term_rename = {t: 'S:' + t for t in
-                   # term_names}  ##IMPORTANT: should always start with S:, bad assumption, but the current status
+    #                term_names}  ##IMPORTANT: should always start with S:, bad assumption, but the current status
 
     # if reindex:
     #     term_rename = {t: 'S:' + str(len(term_names) - term_names.index(t) - 1).zfill(5) for t in term_names}
@@ -112,9 +112,9 @@ def addLabel(ont, node_attr, colname):
 
 def create_term_to_uuid(ont, hname, terms, subnet_links, subnet_size, rf_score, uuid_file=None):
     if uuid_file != None:
-        df_term_2_uuid = pd.read_table(uuid_file, sep='\t', index_col=0)
+        df_term_2_uuid = pd.read_table(uuid_file, sep='\t', index_col=0, header=None)
         df_term_2_uuid.index = df_term_2_uuid.index.astype(str)
-        term_uuid = df_term_2_uuid['UUID'].to_dict()
+        term_uuid = df_term_2_uuid[2].to_dict()
     else:
         pairs = ont_2_genepairs(ont, max_tsize=subnet_size[1])
         net_data, data_categories = support_data_focus(pairs, rf_score, subnet_links)  ## need some work on the input networks
@@ -127,13 +127,13 @@ def create_term_to_uuid(ont, hname, terms, subnet_links, subnet_size, rf_score, 
         ndex_server=ndex_server, ndex_user=ndex_user, ndex_pass=ndex_pass,
                                             spring_feature='Score', spring_weight = 1.0,
                                             edge_groups = dict_edge_group, max_num_edges = args.max_num_edges,
-                                            verbose=True)  ## by default is public
+                                            verbose=False)  ## by default is public
 
         # save the UUID for future use
         with open('term_2_uuid.' + hname, 'a') as fh:
             # fh.write('Name\tOld_name\tUUID\n')
-            ks = term_uuid.keys()
-            term_rename_rev = {v: k for k, v in term_rename.iteritems()}
+            ks = list(term_uuid.keys())
+            term_rename_rev = {v: k for k, v in term_rename.items()}
             ks.sort()
             for k in ks:
                 fh.write('{}\t{}\t{}\n'.format(k, term_rename_rev[k], term_uuid[k]))
@@ -145,8 +145,10 @@ def upload_main_hierarchy(ont, name, term_uuid, visible_cols):
                                      term_2_uuid=term_uuid,
                                      layout='bubble-collect', style='passthrough',
                                      visible_term_attr=visible_cols,
-                                     verbose=True)
-    print(url)
+                                     verbose=False)
+    # print(url)
+
+    print('http://hiview.ucsd.edu/{}?type=test&server=http://test.ndexbio.org'.format(url.split('/')[-1]))
     return url.split('/')[-1]
 
 if __name__ == "__main__":
@@ -154,17 +156,18 @@ if __name__ == "__main__":
     par = argparse.ArgumentParser()
     par.add_argument('--ont', required=True, help = 'ontology file, 3 col table')
     par.add_argument('--hier_name', required=True, help='name of the hierarchy')
+    par.add_argument('--ndex_account', nargs=3)
+    par.add_argument('--score', help = 'integrated edge score')
     par.add_argument('--subnet_size', nargs = 2, default=[2, 500], type=int, help='minimum and maximum term size to show network support')
     par.add_argument('--node_attr', help='table file for attributes on systems')
-    par.add_argument('--subnet_links',  help='data frame for network support')
-    par.add_argument('--rf_score', help = 'integrated edge score')
+    par.add_argument('--evinet_links',  help='data frame for network support')
+    par.add_argument('--evinet_size', default=100, help='data frame for network support')
     par.add_argument('--gene_attr', help='table file for attributes on genes')
     par.add_argument('--term_2_uuid', help='if available, reuse networks that are already on NDEX')
     par.add_argument('--visible_cols', nargs='*', help='a list, specified column names in the ode attribute file will be shown as subsystem information')
-    par.add_argument('--max_num_edges', type=int, help='maximum number of edges uploaded')
+    par.add_argument('--max_num_edges', type=int, default=-1, help='maximum number of edges uploaded; default (-1) is no limit')
     par.add_argument('--col_color', help = 'a column name in the node attribute file, used to color the node (only works in node-link diagram)')
     par.add_argument('--col_label', help = 'a column name in the node attribute file, add as the term label on the map')
-    par.add_argument('--ndex_account', nargs=3)
     par.add_argument('--rename', help = 'if not None, rename name of subsystems specified by this column in the node_attr file')
     par.add_argument('--skip_main', action='store_true', help ='if true, do not update the main hierarchy')
 
@@ -214,18 +217,18 @@ if __name__ == "__main__":
     if args.col_label != None:
         ont = addLabel(ont, node_attr, args.col_label)
 
-    terms = [t for t,s in zip(ont.terms, ont.term_sizes) if (s >= args.subnet_size[0]) and (s<=args.subnet_size[1])] # what does this one do?
+    terms = [t for t,s in zip(ont.terms, ont.term_sizes) if (s >= args.subnet_size[0]) and (s<=args.subnet_size[1])]
 
     # this is to control whether uploading multigraph networks (for different edge types), by default only upload integrated score when size is larger than 100
-    terms_small = [t for t,s in zip(ont.terms, ont.term_sizes) if (s >= args.subnet_size[0]) and (s<100)]
-    terms_big = [t for t,s in zip(ont.terms, ont.term_sizes) if (s >= 100) and (s<=args.subnet_size[1])]
+    terms_small = [t for t,s in zip(ont.terms, ont.term_sizes) if (s >= args.subnet_size[0]) and (s<args.evinet_size)]
+    terms_big = [t for t,s in zip(ont.terms, ont.term_sizes) if (s >= args.evinet_size) and (s<=args.subnet_size[1])]
 
     # upload/reuse subnetworks
     all_uuid = []
     term_uuid = {}
-    if args.rf_score != None:
-        term_uuid.update(create_term_to_uuid(ont, args.hier_name, terms_big, None, args.subnet_size, args.rf_score, uuid_file=args.term_2_uuid))
-        term_uuid.update(create_term_to_uuid(ont, args.hier_name, terms_small, args.subnet_links, args.subnet_size, args.rf_score, uuid_file=args.term_2_uuid))
+    if args.score != None:
+        term_uuid.update(create_term_to_uuid(ont, args.hier_name, terms_big, None, args.subnet_size, args.score, uuid_file=args.term_2_uuid))
+        term_uuid.update(create_term_to_uuid(ont, args.hier_name, terms_small, args.evinet_links, args.subnet_size, args.score, uuid_file=args.term_2_uuid))
         for u in term_uuid.values():
             all_uuid.append(u)
 
@@ -247,3 +250,4 @@ if __name__ == "__main__":
     url = my_ndex.create_networkset(args.hier_name, '')
     set_uuid = url.split('/')[-1]
     my_ndex.add_networks_to_networkset(set_uuid, all_uuid) # this function is only available in Ndex2
+    # TODO: cannot have duplicated set name

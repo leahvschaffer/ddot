@@ -784,110 +784,6 @@ class Ontology(object):
 
         tmp = set(self.terms) - set([y for x in self.parent_2_child.values() for y in x])
         return sorted(tmp)
-
-    def align(self,
-              hier,
-              iterations=100,
-              threads=None,
-              update_self=False,
-              update_ref=False,
-              align_label=None,
-              calculateFDRs=None,
-              mutual_collapse=True,
-              output=None,
-              verbose=False):
-        """Identifies one-to-one matches between terms in this ontology with
-        highly similar terms in another ontology.
-
-
-        This function wraps around the C++ code in the alignOntology
-        package by Michael Kramer at
-        https://github.com/mhk7/alignOntology
-
-        Reference:
-
-        Dutkowski, J., Kramer, M., Surma, M.A., Balakrishnan, R.,
-        Cherry, J.M., Krogan, N.J. and Ideker, T., 2013. "A gene
-        ontology inferred from molecular networks." *Nature
-        biotechnology*, 31(1).
-
-        Parameters
-        ----------
-        hier : ddot.Ontology.Ontology
-
-            The ontology to align against.
-
-        iterations : int
-        
-            The number of null model randomizations to create FDR score.
-
-        threads : int
-
-            Number of CPU processes to run simultaneously. Used to
-            parallelize the the null model randomizations. Default:
-            The number of CPU cores returned by
-            multiprocessing.cpu_count()
-
-        update_self : bool
-
-            If True, then import the node attributes from the
-            reference hierarchy as attributes in this hierarchy
-        
-        update_ref : bool
-
-            If True, then import the node attributes from the this
-            hierarchy as attributes in the reference hierarchy
-
-        mutual_collapse : bool
-        
-            If True, then remove genes that are unique to either
-            ontology, and then remove redundant terms in both
-            ontologies using Ontology.collapse_ontology().
-
-        calculate_FDRs : str
-
-            Filename of the 'calculateFDRs' scripts in the
-            alignOntology C++package at
-            https://github.com/mhk7/alignOntology. Default: use the
-            'calculateFDRs' script that comes built-in with ddot.
-
-        output : str
-
-            Filename to write the results of the alignment as a
-            tab-delimited file. Default: don't write to a file
-
-        Returns
-        -------
-        : pandas.DataFrame
-
-            Dataframe where index are names of terms in this
-            ontology. There are three columns: 'Term' (name of the
-            aligned term), 'Similarity' (the similarity score for the
-            alignment), 'FDR' (the FDR of this alignment given the
-            null models).
-
-        """
-        
-        alignment = align_hierarchies(
-            self,
-            hier,
-            iterations,
-            threads,
-            update_hier1=update_self,
-            update_hier2=update_ref,
-            calculateFDRs=calculateFDRs,
-            mutual_collapse=mutual_collapse,
-            output=output,
-            verbose=verbose)
-
-        # Set labels based on ontology alignment
-        if align_label and (('Aligned_%s' % align_label) in self.node_attr.columns):
-            label_attr = self.node_attr['Aligned_%s' % align_label]            
-            label_attr = {k : '%s\n%s' % (k,v) for k, v in label_attr.iteritems() if not pd.isnull(v)}
-            label_attr = pd.Series(label_attr, name='Label').to_frame()
-            self.update_node_attr(label_attr)
-
-        return alignment
     
     def _make_dummy(self, tree_edges=None):
         """For each term T in the ontology, create a new dummy term that
@@ -1646,7 +1542,7 @@ class Ontology(object):
                 # Used for pandas version >= 0.23
                 edge_attr = pd.concat([edge_attr, mapping_attr], sort=True)
             except:
-            edge_attr = pd.concat([edge_attr, mapping_attr])
+                edge_attr = pd.concat([edge_attr, mapping_attr])
             mapping = mapping.loc[:,[mapping_child, mapping_parent]]
             hierarchy = table.loc[:,[child, parent]]
 
@@ -2111,7 +2007,7 @@ class Ontology(object):
                 # Used for pandas version >= 0.23
                 tmp = pd.concat([df, new_connections], ignore_index=True, sort=True)
             except:
-            tmp = pd.concat([df, new_connections], ignore_index=True)
+                tmp = pd.concat([df, new_connections], ignore_index=True)
             df = tmp[df.columns]
 
         ont = Ontology.from_table(df)
@@ -3789,7 +3685,7 @@ class Ontology(object):
 
                 if isinstance(edge_groups, dict) and (len(edge_groups.keys()) > 0):
                     edge_group_string = []
-                    for k, vs in edge_groups.iteritems():
+                    for k, vs in edge_groups.items():
                         vs.sort()
                         edge_group_string.append(','.join([k] + vs))
                     edge_group_string = '|'.join(edge_group_string)
@@ -3798,19 +3694,19 @@ class Ontology(object):
 
                 # New: only keep the biggest compoent in the network
                 G = max(nx.weakly_connected_component_subgraphs(G), key=len)
-                # further remove degree == 1 nodes
-                if len(G.nodes()) > 6:
-                    low_deg_nodes = []
-                    for v, deg in G.degree().iteritems():
-                        if deg <= 1:
-                            low_deg_nodes.append(v)
-
-                    while len(low_deg_nodes) != 0:
-                        G.remove_nodes_from(low_deg_nodes)
-                        low_deg_nodes = []
-                        for v, deg in G.degree().iteritems():
-                            if deg <= 1:
-                                low_deg_nodes.append(v)
+                # # further remove degree == 1 nodes
+                # if len(G.nodes()) > 6:
+                #     low_deg_nodes = []
+                #     for v, deg in G.degree().items():
+                #         if deg <= 1:
+                #             low_deg_nodes.append(v)
+                #
+                #     while len(low_deg_nodes) != 0:
+                #         G.remove_nodes_from(low_deg_nodes)
+                #         low_deg_nodes = []
+                #         for v, deg in G.degree().items():
+                #             if deg <= 1:
+                #                 low_deg_nodes.append(v)
 
                 # New: compute a pre-layout to networks
                 if spring_feature != None:
