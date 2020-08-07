@@ -1,7 +1,7 @@
 # Update in v1.0.1 (2020 summer)
 
-* Maintain the compatibility with HiView, which has evolved significantly after the original DDOT publication
-* A new script (`tohiview.py`) and a tutorial of uploading to HiView server has been added
+* Maintain the compatibility with HiView, which has improved significantly after the original DDOT publication
+* A new script (`tohiview.py`) and a [tutorial](https://github.com/fanzheng10/ddot/blob/master/examples/1.0.1_HiView_tutorial/hiview_tutorial.ipynb) of uploading to HiView server has been added
 * Running [CliXO 0.3](https://github.com/mhk7/clixo_0.3), [CliXO 1.0](https://github.com/fanzheng10/CliXO-1.0) and [alignOntology](https://github.com/mhk7/alignOntology) from DDOT is not longer supported (in order to make this package lighter and more "Pythonic"). Please visit the original repositories of these programs.
 * We only tested new content with Python >=3.6, as Python 2 has been declared obsoleted.
 
