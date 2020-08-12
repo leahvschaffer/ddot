@@ -5,6 +5,8 @@
 * Running [CliXO 0.3](https://github.com/mhk7/clixo_0.3), [CliXO 1.0](https://github.com/fanzheng10/CliXO-1.0) and [alignOntology](https://github.com/mhk7/alignOntology) from DDOT is not longer supported (in order to make this package lighter and more "Pythonic"). Please visit the original repositories of these programs.
 * We only tested new content with Python >=3.6, as Python 2 has been declared obsoleted.
 
+New dependencies:
+* [ndex2-client](https://pypi.org/project/ndex2/)
 
 # The Data-Driven Ontology Toolkit (DDOT)
 

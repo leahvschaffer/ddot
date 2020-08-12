@@ -3,7 +3,6 @@ import argparse
 import pandas as pd
 from time import sleep
 from ddot import *
-import seaborn as sns
 import ndex2.client as nc2
 
 def geneset2pairs(genelist):
@@ -92,17 +91,6 @@ def rename(ont, node_attr, col=None):
     ont.update_node_attr(node_attr)  # this order somehow matters
     return ont, node_attr, term_rename
 
-
-def addColor(node_attr, colname):
-    pal = sns.color_palette("Reds", 16)
-    hexcode = pal.as_hex()
-    hexcode.insert(0, '#DCDCDC')  # light grey
-    bins = np.logspace(np.log2(0.01), np.log2(1.0), num=16, base=2.0)
-
-    node_attr.loc[:, 'Vis:Fill Color'] = np.array([hexcode[x] for x in np.digitize(np.array(node_attr[colname]), bins, right=True)])
-    return node_attr
-
-
 def addLabel(ont, node_attr, colname):
     for i in node_attr[node_attr[colname].isnull() == False].index:
         # ont.node_attr.loc[i, 'Label'] = i + ' ' + node_attr.loc[i, colname]
@@ -152,7 +140,6 @@ def upload_main_hierarchy(ont, name, term_uuid, visible_cols):
     return url.split('/')[-1]
 
 if __name__ == "__main__":
-    # TODO: create a small test example
     par = argparse.ArgumentParser()
     par.add_argument('--ont', required=True, help = 'ontology file, 3 col table')
     par.add_argument('--hier_name', required=True, help='name of the hierarchy')
@@ -166,7 +153,6 @@ if __name__ == "__main__":
     par.add_argument('--term_2_uuid', help='if available, reuse networks that are already on NDEX')
     par.add_argument('--visible_cols', nargs='*', help='a list, specified column names in the ode attribute file will be shown as subsystem information')
     par.add_argument('--max_num_edges', type=int, default=-1, help='maximum number of edges uploaded; default (-1) is no limit')
-    par.add_argument('--col_color', help = 'a column name in the node attribute file, used to color the node (only works in node-link diagram)')
     par.add_argument('--col_label', help = 'a column name in the node attribute file, add as the term label on the map')
     par.add_argument('--rename', help = 'if not None, rename name of subsystems specified by this column in the node_attr file')
     par.add_argument('--skip_main', action='store_true', help ='if true, do not update the main hierarchy')
@@ -208,9 +194,6 @@ if __name__ == "__main__":
             node_attr.loc['ROOT', 'Parent weight'] = 0.0
     else:
         node_attr['Parent weight'] = 0.01 # since
-
-    if args.col_color != None:
-        node_attr = addColor(node_attr, args.col_color)
 
     ont, node_attr, term_rename = rename(ont, node_attr, args.rename)
 
