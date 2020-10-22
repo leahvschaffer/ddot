@@ -1,0 +1,3 @@
+Physical	./data/test3_ppisample.txt
+Co_protein_expr	./data/test3_coxsample.txt
+CCMI	./data/test3_binarysample.txt

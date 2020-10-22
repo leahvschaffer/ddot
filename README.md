@@ -1,3 +1,13 @@
+# Update in v1.0.1 (2020 summer)
+
+* Maintain the compatibility with HiView, which has improved significantly after the original DDOT publication
+* A new script (`tohiview.py`) and a [tutorial](https://github.com/fanzheng10/ddot/blob/master/examples/1.0.1_HiView_tutorial/hiview_tutorial.ipynb) of uploading to HiView server has been added
+* Running [CliXO 0.3](https://github.com/mhk7/clixo_0.3), [CliXO 1.0](https://github.com/fanzheng10/CliXO-1.0) and [alignOntology](https://github.com/mhk7/alignOntology) from DDOT is not longer supported (in order to make this package lighter and more "Pythonic"). Please visit the original repositories of these programs.
+* We only tested new content with Python >=3.6, as Python 2 has been declared obsoleted.
+
+New dependencies:
+* [ndex2-client](https://pypi.org/project/ndex2/)
+
 # The Data-Driven Ontology Toolkit (DDOT)
 
 The Data-Driven Ontology Toolkit (DDOT) facilitates the inference, analysis, and visualization of biological hierarchies using a data structure called an ontology. 
@@ -47,17 +57,10 @@ The recommended method for installing these dependencies is to use the [Anaconda
 After dependencies are satisfied, download or clone this repository
 
   ```bash
-  git clone https://github.com/michaelkyu/ddot.git
+  git clone https://github.com/[Host_username]/ddot.git
   ```
   
-Next, compile C++ files for running [CliXO v0.3](https://github.com/mhk7/clixo_0.3) and an [ontology alignment algorithm](https://mhk7.github.io/alignOntology/). 
-
-  ```bash
-  cd /path/to/ddot_repository
-  make
-  ```
-  
-Finally, install ddot using `pip`. If you are installing within a conda virtual environment, remember to enter the environment with `source activate <environment_name>` before running `pip`.
+Install ddot using `pip`. If you are installing within a conda virtual environment, remember to enter the environment with `source activate <environment_name>` before running `pip`.
 
   ```bash
   pip install /path/to/ddot_repository
@@ -69,7 +72,7 @@ Finally, install ddot using `pip`. If you are installing within a conda virtual 
 * If `ddot` does not import successfully in a Python terminal, first check that the dependencies can be imported. In particular, check that `import ndex, networkx, igraph, tulip, numpy, scipy, pandas` works.
 * Please raise any other installation problems as an issue on this github repo.
   
-# Docker image
+# Docker image (v1.0)
 
 A Docker image of DDOT is located online at Docker Hub. To learn more about Docker, see https://docs.docker.com/get-started/
 
