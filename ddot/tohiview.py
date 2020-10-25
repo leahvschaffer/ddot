@@ -44,6 +44,7 @@ def support_data_focus(pairs, rf_score, netlinks=None):
     df_rf = pd.read_table(rf_score, sep='\t', header=None)
     if df_rf.shape[1] < 3:
         df_rf[2] = 1.0
+    df_rf[2] = df_rf[2].round(3)
     df_rf.rename(columns = {0:'Gene1', 1:'Gene2', 2:'Score'}, inplace=True)
     df_rf[['Gene1', 'Gene2']] = np.sort(df_rf[['Gene1', 'Gene2']], axis=1)
     df = df_rf.merge(df, how='left', on=['Gene1', 'Gene2'])
