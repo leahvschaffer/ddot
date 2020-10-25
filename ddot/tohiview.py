@@ -41,10 +41,11 @@ def support_data_focus(pairs, rf_score, netlinks=None):
         gene2.append(g2)
 
     df = pd.DataFrame.from_dict(dict([('Gene1', gene1), ('Gene2', gene2)]))
-    df_rf = pd.read_table(rf_score, sep='\t', header=None)
+    df_rf = pd.read_table(rf_score, sep='\t', header=None, converters={2:str})
     if df_rf.shape[1] < 3:
-        df_rf[2] = 1.0
-    df_rf[2] = df_rf[2].round(3)
+        df_rf[2] = '1.0'
+    decimal = df_rf[2].apply(len).max()
+    df_rf[2] = df_rf[2].astype(float).round(decimal)
     df_rf.rename(columns = {0:'Gene1', 1:'Gene2', 2:'Score'}, inplace=True)
     df_rf[['Gene1', 'Gene2']] = np.sort(df_rf[['Gene1', 'Gene2']], axis=1)
     df = df_rf.merge(df, how='left', on=['Gene1', 'Gene2'])
