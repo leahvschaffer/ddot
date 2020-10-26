@@ -41,10 +41,9 @@ def support_data_focus(pairs, rf_score, netlinks=None):
         gene2.append(g2)
 
     df = pd.DataFrame.from_dict(dict([('Gene1', gene1), ('Gene2', gene2)]))
-    df_rf = pd.read_table(rf_score, sep='\t', header=None, dtype={2:str})
+    df_rf = pd.read_table(rf_score, sep='\t', header=None, float_precision='round_trip')
     if df_rf.shape[1] < 3:
-        df_rf[2] = '1.0'
-    df_rf[2] = df_rf[2].astype(float)
+        df_rf[2] = 1.0
     df_rf.rename(columns = {0:'Gene1', 1:'Gene2', 2:'Score'}, inplace=True)
     df_rf[['Gene1', 'Gene2']] = np.sort(df_rf[['Gene1', 'Gene2']], axis=1)
     df = df_rf.merge(df, how='left', on=['Gene1', 'Gene2'])
@@ -59,8 +58,7 @@ def support_data_focus(pairs, rf_score, netlinks=None):
             name, loc = info[0], info[1]
             if len(info) == 3:
                 data_categories[name] = info[2]
-            df_net = pd.read_table(loc, sep='\t', header=None, dtype={2:str})
-            df_net[2] = df_net[2].astype(float)
+            df_net = pd.read_table(loc, sep='\t', header=None, float_precision='round_trip')
             df_net.rename(columns = {0:'Gene1', 1:'Gene2', 2:name}, inplace=True)
             df_net[['Gene1', 'Gene2']] = np.sort(df_net[['Gene1', 'Gene2']], axis=1)
             df = df.merge(df_net, how='left', on = ['Gene1', 'Gene2'])
