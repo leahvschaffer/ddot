@@ -1,4 +1,4 @@
-# Update in v1.0.1 (2020 summer)
+# Update in v1.0.1
 
 * Maintain the compatibility with HiView, which has improved significantly after the original DDOT publication
 * A new script (`tohiview.py`) and a [tutorial](https://github.com/fanzheng10/ddot/blob/master/examples/1.0.1_HiView_tutorial/hiview_tutorial.ipynb) of uploading to HiView server has been added
