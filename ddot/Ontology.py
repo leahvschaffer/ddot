@@ -709,7 +709,7 @@ class Ontology(object):
         
         self.edge_attr = pd.DataFrame()
         self.edge_attr.index = pd.MultiIndex(levels=[[],[]],
-                                             labels=[[],[]],
+                                             codes=[[],[]],
                                              names=['Child', 'Parent'])
 
     def update_node_attr(self, node_attr):
