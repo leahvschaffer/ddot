@@ -23,10 +23,6 @@ import scipy, scipy.sparse
 from scipy.sparse import csr_matrix, coo_matrix
 from scipy.stats import hypergeom
 
-import ndex.client as nc
-from ndex.networkn import NdexGraph
-import ndex.beta.layouts as layouts
-
 import ddot
 import ddot.config
 from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, nx_to_NdexGraph, NdexGraph_to_nx, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
@@ -1235,25 +1231,25 @@ class Ontology(object):
             dtype = int
                 
         for t in self.terms:
-            G.node[t][self.NODETYPE_ATTR] = self.TERM_NODETYPE
-            if ('Size' not in G.node[t]) or pd.isnull(G.node[t]['Size']):
-                G.node[t]['Size'] = dtype(self.term_sizes[self.terms_index[t]])
-            G.node[t]['isRoot'] = False
+            G.nodes[t][self.NODETYPE_ATTR] = self.TERM_NODETYPE
+            if ('Size' not in G.nodes[t]) or pd.isnull(G.nodes[t]['Size']):
+                G.nodes[t]['Size'] = dtype(self.term_sizes[self.terms_index[t]])
+            G.nodes[t]['isRoot'] = False
         for g in self.genes:
-            G.node[g][self.NODETYPE_ATTR] = self.GENE_NODETYPE
-            if ('Size' not in G.node[g]) or pd.isnull(G.node[g]['Size']):
-                G.node[g]['Size'] = dtype(1)
-            G.node[g]['isRoot'] = False
+            G.nodes[g][self.NODETYPE_ATTR] = self.GENE_NODETYPE
+            if ('Size' not in G.nodes[g]) or pd.isnull(G.nodes[g]['Size']):
+                G.nodes[g]['Size'] = dtype(1)
+            G.nodes[g]['isRoot'] = False
 
         # Identify the root
         root = self.get_roots()[0]
-        G.node[root]['isRoot'] = True
+        G.nodes[root]['isRoot'] = True
 
         # Set the node attribute 'Label'. If the node has a "Original
         # Name" attribute, indicating that it is a duplicate, then use
         # that. Otherwise, use the node's name.
         for x in self.genes + self.terms:
-            data = G.node[x]            
+            data = G.nodes[x]            
             if ('Label' not in data) or pd.isnull(data['Label']):
                 if ('Original_Name' in data) and (not pd.isnull(data['Original_Name'])):
                     data['Label'] = data['Original_Name']
@@ -1317,8 +1313,8 @@ class Ontology(object):
         # TODO: move this visual styling outside of the layout
         # functionality
 
-        nx.set_edge_attributes(G, values='ARROW', name='Vis:EDGE_SOURCE_ARROW_SHAPE')
-        nx.set_edge_attributes(G, values='NONE', name='Vis:EDGE_TARGET_ARROW_SHAPE')
+        nx.set_edge_attributes(G, 'ARROW', 'Vis:EDGE_SOURCE_ARROW_SHAPE')
+        nx.set_edge_attributes(G, 'NONE', 'Vis:EDGE_TARGET_ARROW_SHAPE')
 
         for v, data in G.nodes(data=True):
             # if 'collect_hidden' in v and 'is_collect_node' in data and data['is_collect_node']:
@@ -1445,8 +1441,8 @@ class Ontology(object):
                 # TODO: move this visual styling outside of the layout
                 # functionality
                 
-                nx.set_edge_attributes(G, values='ARROW', name='Vis:EDGE_SOURCE_ARROW_SHAPE')
-                nx.set_edge_attributes(G, values='NONE', name='Vis:EDGE_TARGET_ARROW_SHAPE')
+                nx.set_edge_attributes(G, 'ARROW', 'Vis:EDGE_SOURCE_ARROW_SHAPE')
+                nx.set_edge_attributes(G, 'NONE', 'Vis:EDGE_TARGET_ARROW_SHAPE')
 
                 for v, data in G.nodes(data=True):
                     # if 'collect_hidden' in v and 'is_collect_node' in data and data['is_collect_node']:
@@ -1468,8 +1464,9 @@ class Ontology(object):
                 raise Exception('Unsupported layout: %s', layout)
 
             if layout is not None:
-                nx.set_node_attributes(G, values={n : x for n, (x,y) in G.pos.items()}, name='x_pos')
-                nx.set_node_attributes(G, values={n : y for n, (x,y) in G.pos.items()}, name='y_pos')
+                nx.set_node_attributes(G, {n: {'x_pos': x, "y_pos": y} for n, (x, y) in G.pos.items()})
+                #nx.set_node_attributes(G, {n : x for n, (x,y) in G.pos.items()}, 'x_pos')
+                #nx.set_node_attributes(G, {n : y for n, (x,y) in G.pos.items()}, 'y_pos')
                 
         else:
             G = self._to_networkx_no_layout()
@@ -3921,12 +3918,7 @@ class Ontology(object):
 
         sub_nx = G.copy()
         sub_nx.remove_edges_from([(u,v) for u,v,attr in sub_nx.edges(data=True) if attr['Is_Tree_Edge']=='Not_Tree'])
-        pos = nx.spring_layout(sub_nx, dim=2, k=None,
-                               pos=None,
-                               fixed=None,
-                               iterations=50,
-                               weight=None,
-                               scale=1.0)
+        pos = nx.spring_layout(sub_nx, weight=None)
 
         tmp = np.array([x[0] for x in pos.values()])
         x_min, x_max = tmp.min(), tmp.max()
@@ -4118,8 +4110,10 @@ class Ontology(object):
                     network_sub.loc[network_sub[spring_feature] < min_children_term_weights, spring_feature] = 0.5*min_children_term_weights
                     network_sub[spring_feature] = network_sub[spring_feature] ** spring_weight
 
-                G_nx = nx.from_pandas_dataframe(network_sub, g1, g2,
-                                                edge_attr=features)
+                #G_nx = nx.from_pandas_dataframe(network_sub, g1, g2,
+                 #                               edge_attr=features)
+                G_nx = nx.from_pandas_edgelist(network_sub, g1, g2, edge_attr=features)
+
                 if node_attr is not None:
                     set_node_attributes_from_pandas(G_nx, node_attr)
 

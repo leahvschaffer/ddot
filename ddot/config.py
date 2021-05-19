@@ -3,8 +3,6 @@ from __future__ import absolute_import
 import os, inspect, io
 import json
 
-from ndex.networkn import NdexGraph
-
 import ddot
 
 ###########################################

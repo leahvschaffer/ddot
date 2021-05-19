@@ -12,9 +12,6 @@ from datetime import datetime
 import pandas as pd
 import networkx as nx
 import numpy as np
-
-import ndex.client as nc
-from ndex.networkn import NdexGraph
     
 import ddot
 import ddot.config
@@ -274,37 +271,6 @@ def melt_square(df, columns=['Gene1', 'Gene2'], similarity='similarity', empty_v
     tmp.index.rename(columns, inplace=True)
     tmp.rename(similarity, inplace=True)
     return tmp.reset_index()
-
-# def get_gene_name_converter(genes, scopes='symbol', fields='entrezgene', species='human', target='gene'):
-#     """Query mygene.info to get a dictionary mapping gene names in the ID
-#     namespace scopes to the ID namespace in fields
-
-#     Weird behavior with mygene.info: for Entrez genes, use fields
-#     'entrezgene'. For ENSEMBL genes, use fields "ensembl"
-
-#     """
-
-#     if hasattr(genes, '__iter__') and not isinstance(genes, (str, unicode)):
-#         genes = ','.join(genes)
-        
-#     import requests
-#     r = requests.post('http://mygene.info/v3/query',
-#                       data={'q': genes,
-#                             'scopes': scopes,
-#                             'fields': fields,
-#                             'species': species})
-    
-    
-#     def parse_field(x):
-#         if isinstance(x, dict):
-#             return [unicode(x[target])]
-#         elif isinstance(x, list):
-#             return [unicode(y[target]) for y in x]
-#         else:
-#             return unicode(x)
-    
-#     dic = {x['query'] : parse_field(x[fields]) for x in r.json() if x.has_key(fields)}
-#     return dic
 
 def update_nx_with_alignment(G,
                              alignment,
@@ -579,7 +545,8 @@ def nx_to_NdexGraph(G_nx, discard_null=True):
         if discard_null:
             edge_attr = {k:v for k,v in edge_attr.items() if not pd.isnull(v)}
 
-        G.add_edge(node_dict[s], node_dict[t], G.max_edge_id, edge_attr)
+        G.add_edge(node_dict[s], node_dict[t], G.max_edge_id, attr_dict=edge_attr)
+        
         G.max_edge_id += 1
 
     if hasattr(G_nx, 'pos'):
@@ -631,17 +598,7 @@ def parse_ndex_server(ndex_url):
     elif '#/network/' in ndex_url:
         return ndex_url.split('#/network/')[0]
     else:
-        raise Exception("Not a valid NDEx URL: %s" % ndex_url)
-
-    # tmp = ndex_url.split('//')
-    # if len(tmp) == 2:
-    #     # e.g. 'http://dev2.ndexbio.org/v2/network/8bfa8318-55ed-11e7-a2e2-0660b7976219'
-    #     return tmp[0] + '//' + tmp[1].split('v2/network/')[0]
-    # elif len(tmp) == 1:
-    #     # e.g. 'dev2.ndexbio.org/v2/network/8bfa8318-55ed-11e7-a2e2-0660b7976219'
-    #     return tmp[0].split('v2/network/')[0]
-    # elif len(tmp) == 0 or len(tmp) > 2:
-    #     raise Exception()        
+        raise Exception("Not a valid NDEx URL: %s" % ndex_url)    
 
 def create_edgeMatrix(X, X_cols, X_rows, verbose=True, G=None, ndex2=True):
     """Converts an NumPy array into a NdexGraph with a special CX aspect
@@ -1501,9 +1458,9 @@ def gridify(parents, pos, G):
 def nx_set_tree_edges(G, tree_edges):
     nx.set_edge_attributes(
         G,
-        values={(s,t) : 'Tree' if ((s,t) in tree_edges) else 'Not_Tree'
+        {(s,t) : 'Tree' if ((s,t) in tree_edges) else 'Not_Tree'
          for s, t in G.edges(data=False)},
-        name='Is_Tree_Edge'
+        'Is_Tree_Edge'
     )
 
 def color_gradient(ratio, min_col='#FFFFFF', max_col='#D65F5F', output_hex=True):
