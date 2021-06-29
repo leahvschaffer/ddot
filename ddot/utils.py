@@ -12,6 +12,7 @@ from datetime import datetime
 import pandas as pd
 import networkx as nx
 import numpy as np
+import ndex2
     
 import ddot
 import ddot.config
@@ -321,11 +322,11 @@ def update_nx_with_alignment(G,
 
     return G
     
-###################################################
-# NetworkX, NdexGraph, and NDEx format converters #
-###################################################
+################################################
+# NetworkX, NiceCX, and NDEx format converters #
+################################################
 
-def set_node_attributes_from_pandas(G, node_attr):
+def set_node_attributes_from_pandas(G, node_attr, id_map=None):
     """Modify node attributes according to a pandas.DataFrame.
 
     Parameters
@@ -342,6 +343,8 @@ def set_node_attributes_from_pandas(G, node_attr):
     if node_attr is not None:
         for feature_name, feature in node_attr.iteritems():
             for n, v in feature.dropna().iteritems():
+                print(n)
+                print(v)
                 try:
                     # If v is actually a NumPy scalar type,
                     # e.g. np.float or np.int, then convert it to a
@@ -512,65 +515,6 @@ def ig_edges_to_pandas(G, attr_list=None):
     
     return df    
 
-def nx_to_NdexGraph(G_nx, discard_null=True):
-    """Converts a NetworkX into a NdexGraph object.
-
-    Parameters
-    ----------
-    G_nx : networkx.Graph
-
-    Returns
-    -------
-    ndex.networkn.NdexGraph
-
-    """
-
-    G = NdexGraph()
-    node_id = 0
-    node_dict = {}
-    G.max_edge_id = 0
-    for node_name, node_attr in G_nx.nodes(data=True):
-        if discard_null:
-            node_attr = {k:v for k,v in node_attr.items() if not pd.isnull(v)}
-
-        if 'name' in node_attr:
-            #G.add_node(node_id, node_attr)
-            G.add_node(node_id, **node_attr)
-        else:
-            #G.add_node(node_id, node_attr, name=node_name)
-            G.add_node(node_id, name=node_name, **node_attr)
-        node_dict[node_name] = node_id
-        node_id += 1
-    for s, t, edge_attr in G_nx.edges(data=True):
-        if discard_null:
-            edge_attr = {k:v for k,v in edge_attr.items() if not pd.isnull(v)}
-
-        G.add_edge(node_dict[s], node_dict[t], G.max_edge_id, attr_dict=edge_attr)
-        
-        G.max_edge_id += 1
-
-    if hasattr(G_nx, 'pos'):
-        G.pos = {node_dict[a] : b for a, b in G_nx.pos.items()}
-        # G.subnetwork_id = 1
-        # G.view_id = 1
-
-    return G
-
-def NdexGraph_to_nx(G):
-    """Converts a NetworkX into a NdexGraph object.
-
-    Parameters
-    ----------
-    G : ndex.networkn.NdexGraph
-
-    Returns
-    -------
-    networkx.classes.DiGraph
-
-    """
-
-    return nx.DiGraph(nx.relabel_nodes(G, nx.get_node_attributes(G, 'name'), copy=True))
-
 def parse_ndex_uuid(ndex_url):
     """Extracts the NDEx UUID from a URL
 
@@ -601,7 +545,7 @@ def parse_ndex_server(ndex_url):
         raise Exception("Not a valid NDEx URL: %s" % ndex_url)    
 
 def create_edgeMatrix(X, X_cols, X_rows, verbose=True, G=None, ndex2=True):
-    """Converts an NumPy array into a NdexGraph with a special CX aspect
+    """Converts an NumPy array into a NiceCX network with a special CX aspect
     called "edge_matrix". The array is serialized using base64 encoding.
     
     Parameters
@@ -616,115 +560,55 @@ def create_edgeMatrix(X, X_cols, X_rows, verbose=True, G=None, ndex2=True):
 
     Returns
     -------
-    ndex.networkn.NdexGraph        
+    NiceCX Network     
 
     """
-
-    if ndex2:
-        import ndex2
-        import ndex2.client
         
-        if not isinstance(X, np.ndarray):
-            raise Exception('Provided matrix is not of type numpy.ndarray')
-        if not isinstance(X_cols, list):
-            raise Exception('Provided column header is not in the correct format.  Please provide a list of strings')
-        if not isinstance(X_rows, list):
-            raise Exception('Provided row header is not in the correct format.  Please provide a list of strings')
+    if not isinstance(X, np.ndarray):
+        raise Exception('Provided matrix is not of type numpy.ndarray')
+    if not isinstance(X_cols, list):
+        raise Exception('Provided column header is not in the correct format.  Please provide a list of strings')
+    if not isinstance(X_rows, list):
+        raise Exception('Provided row header is not in the correct format.  Please provide a list of strings')
 
-        if not X.flags['C_CONTIGUOUS']:
-            X = np.ascontiguousarray(X)
+    if not X.flags['C_CONTIGUOUS']:
+        X = np.ascontiguousarray(X)
 
-        X_bytes = X.tobytes()
-        chunk_size = int(1e8) # 100MB
-        serialized_list = [{'v': base64.b64encode(X_bytes[s:e])} for i, (s, e) in enumerate(ddot.split_indices_chunk(len(X_bytes), chunk_size))]
-        if verbose:
-            print('Broke up serialization into %s chunks' % len(serialized_list))
+    X_bytes = X.tobytes()
+    chunk_size = int(1e8) # 100MB
+    serialized_list = [{'v': base64.b64encode(X_bytes[s:e])} for i, (s, e) in enumerate(ddot.split_indices_chunk(len(X_bytes), chunk_size))]
+    if verbose:
+        print('Broke up serialization into %s chunks' % len(serialized_list))
 
-        if verbose:
-            print('Size of numpy array (MB):', X.nbytes / 1e6)
-            serialize_size = sum([sys.getsizeof(x['v']) for x in serialized_list])
-            print('Size of serialization (MB):', serialize_size / 1e6)
-            print('Constant factor overhead:', float(serialize_size) / X.nbytes)
-            
-#         serialized = base64.b64encode(X.tobytes())
-
-#         if verbose:
-#             print('Size of numpy array (MB):', X.nbytes / 1e6)
-#             print('Size of serialization (MB):', sys.getsizeof(serialized) / 1e6)
-#             print('Constant factor overhead:', float(sys.getsizeof(serialized)) / X.nbytes)
-
-#         chunk_size = int(1e8)
-# #        chunk_size = int(1e1)
-#         serialized_list = [{'v': serialized[s:e]} for i, (s, e) in enumerate(ddot.split_indices_chunk(len(serialized), chunk_size))]
-#         if verbose:
-#             print('Broke up serialization into %s chunks' % len(serialized_list))
-
-
-        nice_cx_builder = ndex2.NiceCXBuilder()
-        # nice_cx_builder.set_name(name)
-        nice_cx_builder.add_node(name='Matrix', represents='Matrix')
-
-        # nice_cx_builder.add_opaque_aspect('matrix', [{'v': serialized}])
-        #nice_cx_builder.add_opaque_aspect('matrix', [serialized_list])
-        nice_cx_builder.add_opaque_aspect('matrix', serialized_list)
-        nice_cx_builder.add_opaque_aspect('matrix_cols', [{'v': X_cols}])
-        nice_cx_builder.add_opaque_aspect('matrix_rows', [{'v': X_rows}])
-        nice_cx_builder.add_opaque_aspect('matrix_dtype', [{'v': X.dtype.name}])
-
-        nice_cx = nice_cx_builder.get_nice_cx()
-
-        return nice_cx
-    else:
-        if not X.flags['C_CONTIGUOUS']:
-            X = np.ascontiguousarray(X)
-
-        # Use base64 encoding of binary to text. More efficient than
-        # pickle(*, protocol=0)
-        start = time.time()
-        serialized = base64.b64encode(X)
-        base64_time = time.time() - start
-
-        assert isinstance(X_cols, list)
-        assert isinstance(X_rows, list)
-
-        if sys.version_info.major==3:
-            start = time.time()
-            serialized = serialized.decode('utf-8')
-            serialize_decode_time = time.time() - start
-            if verbose:
-                print('serialize_decode_time (sec):', serialize_decode_time)
-
-        if verbose:
-            print('base64 encoding time (sec):', base64_time)
-            print('Size of numpy array (MB):', X.nbytes / 1e6)
-            print('Size of serialization (MB):', sys.getsizeof(serialized) / 1e6)
-            print('Constant factor overhead:', float(sys.getsizeof(serialized)) / X.nbytes)
-
-        if G is None:
-            G = NdexGraph()
-        # G.unclassified_cx.append(
-        #     {'matrix': serialized,
-        #      'matrix_cols' : X_cols,
-        #      'matrix_rows' : X_rows,
-        #      'matrix_dtype' : X.dtype.name})
-
-        G.unclassified_cx.append({'matrix': [{'v': serialized}]})
-        G.unclassified_cx.append({'matrix_cols': [{'v': X_cols}]})
-        G.unclassified_cx.append({'matrix_rows': [{'v': X_rows}]})
-        G.unclassified_cx.append({'matrix_dtype': [{'v': X.dtype.name}]})
-
-        G.add_new_node('Matrix')
+    if verbose:
+        print('Size of numpy array (MB):', X.nbytes / 1e6)
+        serialize_size = sum([sys.getsizeof(x['v']) for x in serialized_list])
+        print('Size of serialization (MB):', serialize_size / 1e6)
+        print('Constant factor overhead:', float(serialize_size) / X.nbytes)
         
-        return G
+    nice_cx_builder = ndex2.NiceCXBuilder()
+    # nice_cx_builder.set_name(name)
+    nice_cx_builder.add_node(name='Matrix', represents='Matrix')
+
+    # nice_cx_builder.add_opaque_aspect('matrix', [{'v': serialized}])
+    #nice_cx_builder.add_opaque_aspect('matrix', [serialized_list])
+    nice_cx_builder.add_opaque_aspect('matrix', serialized_list)
+    nice_cx_builder.add_opaque_aspect('matrix_cols', [{'v': X_cols}])
+    nice_cx_builder.add_opaque_aspect('matrix_rows', [{'v': X_rows}])
+    nice_cx_builder.add_opaque_aspect('matrix_dtype', [{'v': X.dtype.name}])
+
+    nice_cx = nice_cx_builder.get_nice_cx()
+
+    return nice_cx
 
 def load_edgeMatrix(ndex_uuid,
                     ndex_server,
                     ndex_user,
                     ndex_pass,
-                    ndex=None,
+                    ndex_client=None,
                     json=None,
                     verbose=True):
-    """Loads a NumPy array from a NdexGraph with a special CX aspect
+    """Loads a NumPy array from an NDEx network with a special CX aspect
     called "edge_matrix".
     
     Parameters
@@ -759,17 +643,14 @@ def load_edgeMatrix(ndex_uuid,
     """
 
     if json is None:
-        # import ijson
-        # json = ijson
-        
         import simplejson
         json = simplejson
         
-    if ndex is None:
-        ndex = nc.Ndex(ndex_server, ndex_user, ndex_pass)
+    if ndex_client is None:
+        ndex_client = ndex2.client.Ndex2(host=ndex_server, username=ndex_user, password=ndex_pass)
 
     start = time.time()
-    response = ndex.get_network_as_cx_stream(ndex_uuid)
+    response = ndex_client.get_network_as_cx_stream(ndex_uuid)
     response.raw.decode_content = True
     try:
         cx = json.load(response.raw)
@@ -789,13 +670,11 @@ def load_edgeMatrix(ndex_uuid,
             dtype = np.dtype(aspect.get('matrix_dtype')[0].get('v'))
 
     dim = (len(rows), len(cols))
-    #X_buf = bytearray(dim[0] * dim[1] * np.dtype(dtype).itemsize)
     X_buf = []
     pointer = 0
 
     if verbose:
         print('Dim:', dim)
-        # print('Bytes:', len(X_buf))
         print('Bytes:', dim[0] * dim[1] * np.dtype(dtype).itemsize)
     
     for aspect in cx:
@@ -807,9 +686,6 @@ def load_edgeMatrix(ndex_uuid,
                     binary_data = base64.b64decode(x.get('v'))
                 del x['v']
                 X_buf.append(binary_data)
-                
-                # X_buf[pointer : pointer + len(binary_data)] = binary_data
-                # pointer += len(binary_data)
 
     X_buf = (b"").join(X_buf)
         
@@ -821,8 +697,8 @@ def load_edgeMatrix(ndex_uuid,
     
     return X, rows, cols
 
-def sim_matrix_to_NdexGraph(sim, names, similarity, output_fmt, node_attr=None):
-    """Convert similarity matrix into NdexGraph object
+def sim_matrix_to_nice_cx(sim, names, similarity, output_fmt, node_attr=None):
+    """Convert similarity matrix into nice_cx object
 
     Parameters
     -----------
@@ -833,25 +709,21 @@ def sim_matrix_to_NdexGraph(sim, names, similarity, output_fmt, node_attr=None):
         Genes names, in the same order as the rows and columns of sim
 
     similarity : str
-        Edge attribute name for similarities in the resulting NdexGraph object
+        Edge attribute name for similarities in the resulting nice_cx object
 
     output_fmt : str
         Either 'cx' (Standard CX format), or 'cx_matrix' (custom edgeMatrix aspect)
 
     node_attr : pandas.DataFrame, optional
-        Node attributes, as a pandas.DataFrame, to be set in NdexGraph object
+        Node attributes, as a pandas.DataFrame, to be set in nice_cx object
 
     Returns
     ---------
-    ndex.networkn.NdexGraph
+    NiceCX network
 
     """
 
     if output_fmt == 'cx_matrix':
-        # G = nx.Digraph()
-        # if node_attr is not None:
-        #     set_node_attributes_from_pandas(G, gene_attr)
-
         names = list(names)
         return create_edgeMatrix(sim, names, names, ndex2=False)
 
@@ -869,7 +741,7 @@ def sim_matrix_to_NdexGraph(sim, names, similarity, output_fmt, node_attr=None):
         if node_attr is not None:
             set_node_attributes_from_pandas(G, node_attr)
 
-        return nx_to_NdexGraph(G)
+        return ndex2.create_nice_cx_from_network(G)
     else:
         raise Exception('Unsupported output_fmt: %s' % output_fmt)
 
@@ -935,12 +807,7 @@ def ndex_to_sim_matrix(ndex_url,
     
     if input_fmt=='cx':
         # Read graph using NDEx client
-        G = NdexGraph_to_nx(
-              NdexGraph(
-                  server=ndex_server, 
-                  username=ndex_user,
-                  password=ndex_pass,
-                  uuid=ndex_uuid))
+        G = ndex2.create_nice_cx_from_server(ndex_server, username=ndex_user, password=ndex_pass, uuid=ndex_uuid).to_networkx(mode='default')
 
         # Create a DataFrame of similarity scores
         G_df = nx_edges_to_pandas(G)
@@ -1334,15 +1201,15 @@ def make_seed_ontology(sim,
             '(parameters: %s' % ', '.join(['%s=%s' % (k,v) for k,v in build_kwargs.items()])
         )
 
-        ont_url, ont_ndexgraph = ont.to_ndex(
+        ont_url, ont_nice_cx = ont.to_ndex(
             description=description,
             verbose=verbose,
             **ndex_kwargs
         )
     else:
-        ont_url, ont_ndexgraph = None, None
+        ont_url, ont_nice_cx = None, None
 
-    return ont, ont_url, ont_ndexgraph, expand_results
+    return ont, ont_url, ont_nice_cx, expand_results
 
 def make_network_public(uuid,
                         ndex_server,
@@ -1350,7 +1217,7 @@ def make_network_public(uuid,
                         ndex_pass,
                         timeout=60,
                         error=False):
-    ndex = nc.Ndex(ndex_server, ndex_user, ndex_pass)
+    ndex_client = ndex2.client.Ndex2(host=ndex_server, username=ndex_user, password=ndex_pass)
             
     sleep_time = 0.25
     
@@ -1365,7 +1232,7 @@ def make_network_public(uuid,
                 break
         else:
             try:
-                ndex.make_network_public(uuid)
+                ndex_client.make_network_public(uuid)
                 break
             except:
                 time.sleep(sleep_time)

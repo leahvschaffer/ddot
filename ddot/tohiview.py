@@ -128,7 +128,7 @@ def create_term_to_uuid(ont, hname, terms, subnet_links, subnet_size, rf_score, 
     return term_uuid
 
 def upload_main_hierarchy(ont, name, term_uuid, visible_cols):
-    url, ont_ndexgraph = ont.to_ndex(name=name,
+    url, ont_nice_cx = ont.to_ndex(name=name,
                                      ndex_server=ndex_server, ndex_user=ndex_user, ndex_pass=ndex_pass,
                                      term_2_uuid=term_uuid,
                                      layout='bubble-collect', style='passthrough',
