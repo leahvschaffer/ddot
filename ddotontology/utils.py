@@ -4,8 +4,6 @@ import sys
 import base64
 import time
 import traceback
-import os
-import io
 from math import ceil
 from datetime import datetime
 
@@ -14,8 +12,8 @@ import networkx as nx
 import numpy as np
 import ndex2
     
-import ddot
-import ddot.config
+import ddotontology
+import ddotontology.config
 
 def print_time(*s):
     print(' '.join(map(str, s)), datetime.today())
