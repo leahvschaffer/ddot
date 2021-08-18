@@ -3,5 +3,5 @@ scipy
 pandas>=0.2
 networkx
 python-igraph
-ndex-dev
+ndex2
 tulip-python
