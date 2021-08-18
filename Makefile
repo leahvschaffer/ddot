@@ -48,7 +48,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style with flake8
-	flake8 cdapsutil tests
+	flake8 ddotkit tests
 
 test: ## run tests quickly with the default Python
 	
@@ -59,14 +59,14 @@ test-all: ## run tests on every Python version with tox
 
 coverage: ## check code coverage quickly with the default Python
 	
-		coverage run --source cdapsutil setup.py test
+		coverage run --source ddotkit setup.py test
 	
 		coverage report -m
 		coverage html
 		$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	sphinx-apidoc -o docs/ cdapsutil
+	sphinx-apidoc -o docs/ ddotkit
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
