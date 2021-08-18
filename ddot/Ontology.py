@@ -22,14 +22,11 @@ import igraph
 import scipy, scipy.sparse
 from scipy.sparse import csr_matrix, coo_matrix
 from scipy.stats import hypergeom
+import ndex2
 
-import ndex.client as nc
-from ndex.networkn import NdexGraph
-import ndex.beta.layouts as layouts
-        
 import ddot
 import ddot.config
-from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, nx_to_NdexGraph, NdexGraph_to_nx, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
+from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
 
 def _collapse_node(g,
                    v,
@@ -709,7 +706,7 @@ class Ontology(object):
         
         self.edge_attr = pd.DataFrame()
         self.edge_attr.index = pd.MultiIndex(levels=[[],[]],
-                                             labels=[[],[]],
+                                             codes=[[],[]],
                                              names=['Child', 'Parent'])
 
     def update_node_attr(self, node_attr):
@@ -1131,25 +1128,25 @@ class Ontology(object):
             dtype = int
                 
         for t in self.terms:
-            G.node[t][self.NODETYPE_ATTR] = self.TERM_NODETYPE
-            if ('Size' not in G.node[t]) or pd.isnull(G.node[t]['Size']):
-                G.node[t]['Size'] = dtype(self.term_sizes[self.terms_index[t]])
-            G.node[t]['isRoot'] = False
+            G.nodes[t][self.NODETYPE_ATTR] = self.TERM_NODETYPE
+            if ('Size' not in G.nodes[t]) or pd.isnull(G.nodes[t]['Size']):
+                G.nodes[t]['Size'] = dtype(self.term_sizes[self.terms_index[t]])
+            G.nodes[t]['isRoot'] = False
         for g in self.genes:
-            G.node[g][self.NODETYPE_ATTR] = self.GENE_NODETYPE
-            if ('Size' not in G.node[g]) or pd.isnull(G.node[g]['Size']):
-                G.node[g]['Size'] = dtype(1)
-            G.node[g]['isRoot'] = False
+            G.nodes[g][self.NODETYPE_ATTR] = self.GENE_NODETYPE
+            if ('Size' not in G.nodes[g]) or pd.isnull(G.nodes[g]['Size']):
+                G.nodes[g]['Size'] = dtype(1)
+            G.nodes[g]['isRoot'] = False
 
         # Identify the root
         root = self.get_roots()[0]
-        G.node[root]['isRoot'] = True
+        G.nodes[root]['isRoot'] = True
 
         # Set the node attribute 'Label'. If the node has a "Original
         # Name" attribute, indicating that it is a duplicate, then use
         # that. Otherwise, use the node's name.
         for x in self.genes + self.terms:
-            data = G.node[x]            
+            data = G.nodes[x]            
             if ('Label' not in data) or pd.isnull(data['Label']):
                 if ('Original_Name' in data) and (not pd.isnull(data['Original_Name'])):
                     data['Label'] = data['Original_Name']
@@ -1213,8 +1210,8 @@ class Ontology(object):
         # TODO: move this visual styling outside of the layout
         # functionality
 
-        nx.set_edge_attributes(G, values='ARROW', name='Vis:EDGE_SOURCE_ARROW_SHAPE')
-        nx.set_edge_attributes(G, values='NONE', name='Vis:EDGE_TARGET_ARROW_SHAPE')
+        nx.set_edge_attributes(G, 'ARROW', 'Vis:EDGE_SOURCE_ARROW_SHAPE')
+        nx.set_edge_attributes(G, 'NONE', 'Vis:EDGE_TARGET_ARROW_SHAPE')
 
         for v, data in G.nodes(data=True):
             # if 'collect_hidden' in v and 'is_collect_node' in data and data['is_collect_node']:
@@ -1341,8 +1338,8 @@ class Ontology(object):
                 # TODO: move this visual styling outside of the layout
                 # functionality
                 
-                nx.set_edge_attributes(G, values='ARROW', name='Vis:EDGE_SOURCE_ARROW_SHAPE')
-                nx.set_edge_attributes(G, values='NONE', name='Vis:EDGE_TARGET_ARROW_SHAPE')
+                nx.set_edge_attributes(G, 'ARROW', 'Vis:EDGE_SOURCE_ARROW_SHAPE')
+                nx.set_edge_attributes(G, 'NONE', 'Vis:EDGE_TARGET_ARROW_SHAPE')
 
                 for v, data in G.nodes(data=True):
                     # if 'collect_hidden' in v and 'is_collect_node' in data and data['is_collect_node']:
@@ -1364,12 +1361,13 @@ class Ontology(object):
                 raise Exception('Unsupported layout: %s', layout)
 
             if layout is not None:
-                nx.set_node_attributes(G, values={n : x for n, (x,y) in G.pos.items()}, name='x_pos')
-                nx.set_node_attributes(G, values={n : y for n, (x,y) in G.pos.items()}, name='y_pos')
+                nx.set_node_attributes(G, {n: {'x_pos': x, "y_pos": y} for n, (x, y) in G.pos.items()})
+                #nx.set_node_attributes(G, {n : x for n, (x,y) in G.pos.items()}, 'x_pos')
+                #nx.set_node_attributes(G, {n : y for n, (x,y) in G.pos.items()}, 'y_pos')
                 
         else:
             G = self._to_networkx_no_layout()
-            
+        
         return G
 
     @classmethod
@@ -1643,28 +1641,24 @@ class Ontology(object):
             ndex_server = parse_ndex_server(ndex_uuid)
             ndex_uuid = parse_ndex_uuid(ndex_uuid)
 
-        G = NdexGraph(
-            server=ndex_server, 
-            username=ndex_user,
-            password=ndex_pass,
-            uuid=ndex_uuid)
+        G = ndex2.create_nice_cx_from_server()
         
-        return cls.from_NdexGraph(
+        return cls.from_nice_cx(
             G,
             edgetype_attr=edgetype_attr,
             edgetype_value=edgetype_value)        
 
     @classmethod
-    def from_NdexGraph(cls,
+    def from_nice_cx(cls,
                        G,
                        edgetype_attr=None,
                        edgetype_value=None):
-        """Converts a NdexGraph object to an Ontology object. Gene and terms
+        """Converts a NiceCX object to an Ontology object. Gene and terms
         are distinguished by an edge attribute.
 
         Parameters
         ----------
-        G : NdexGraph
+        G : NiceCX Network
 
         edgetype_attr : str
 
@@ -1682,7 +1676,7 @@ class Ontology(object):
         """
         
         return cls.from_networkx(
-            NdexGraph_to_nx(G),
+            G.to_networkx(mode='default'),
             edgetype_attr=edgetype_attr,
             edgetype_value=edgetype_value)
 
@@ -3136,10 +3130,10 @@ class Ontology(object):
             node attributes 'x_pos' and 'y_pos'. If None, then do not
             perform a layout.
 
-        style : ndex.networkn.NdexGraph
+        style : NiceCX Network
 
             The Cytoscape.js visual style on NDEx. Represented using
-            CX and stored in an NdexGraph.
+            CX.
 
         network : pandas.Dataframe
 
@@ -3175,7 +3169,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ndex.networkn.NdexGraph
+        : NiceCX Network
 
         """
 
@@ -3216,8 +3210,8 @@ class Ontology(object):
         elif term_2_uuid is None:
             term_2_uuid = {}
 
-        if verbose: print('Creating NdexGraph')
-        G = ont.to_NdexGraph(
+        if verbose: print('Creating NiceCX Network')
+        G = ont.to_nice_cx(
                 name=name,
                 description=description,
                 term_2_uuid=term_2_uuid,
@@ -3231,11 +3225,12 @@ class Ontology(object):
             G.set_network_attribute('Display', '|'.join(visible_term_attr))
             
         if verbose:  print('Uploading to NDEx')
-        ont_url = G.upload_to(ndex_server, ndex_user, ndex_pass, visibility=visibility)
-
+        ont_url = G.upload_to(server=ndex_server, username=ndex_user, password=ndex_pass)
+        ndex_client = ndex2.client.Ndex2(host=ndex_server, username=ndex_user, password=ndex_pass)
+        ndex_client.set_network_system_properties(parse_ndex_uuid(ont_url), {'visibility': visibility})
         return ont_url, G
             
-    def to_NdexGraph(self,
+    def to_nice_cx(self,
                      name=None,
                      description=None,
                      term_2_uuid=None,
@@ -3276,7 +3271,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ndex.networkn.NdexGraph
+        : NiceCX Network
 
         """
 
@@ -3312,13 +3307,7 @@ class Ontology(object):
                 if t in term_2_uuid:
                     G.node[t]['ndex:internalLink'] = '[%s](%s)' % (G.node[t]['Label'], term_2_uuid[t])
 
-        # # Change Original_Name to node indices
-        # name_2_idx = {data['name'] : v for v, data in G.nodes(data=True)}
-        # for v, data in G.nodes(data=True):
-        #     if 'Original_Name' in data and 'Hidden' in data and data['Hidden']==True:
-        #         data['Original_Name'] = name_2_idx[data['Original_Name']]
-
-        G = nx_to_NdexGraph(G)
+        G = ndex2.create_nice_cx_from_networkx(G)
         
         if name is not None:
             G.set_name(name)
@@ -3326,9 +3315,8 @@ class Ontology(object):
             G.set_network_attribute('Description', description)
             
         if style:
-            import ndex.beta.toolbox as toolbox
-            toolbox.apply_network_as_template(G, style)
-            
+            G.apply_style_from_network(style)
+        
         return G
 
     def to_cx(self,
@@ -3381,8 +3369,8 @@ class Ontology(object):
 
         """
 
-        # Convert to NdexGraph
-        G = self.to_NdexGraph(name=name,
+        # Convert to NiceCX
+        G = self.to_nice_cx(name=name,
                               description=description,
                               term_2_uuid=term_2_uuid,
                               spanning_tree=spanning_tree,
@@ -3422,7 +3410,7 @@ class Ontology(object):
         """
 
         # Convert to NetworkX
-        G = self.to_NdexGraph(spanning_tree=spanning_tree,
+        G = self.to_networkx(spanning_tree=spanning_tree,
                               layout=layout)
         
         if hasattr(output, 'write'):
@@ -3436,12 +3424,7 @@ class Ontology(object):
 
         sub_nx = G.copy()
         sub_nx.remove_edges_from([(u,v) for u,v,attr in sub_nx.edges(data=True) if attr['Is_Tree_Edge']=='Not_Tree'])
-        pos = nx.spring_layout(sub_nx, dim=2, k=None,
-                               pos=None,
-                               fixed=None,
-                               iterations=50,
-                               weight=None,
-                               scale=1.0)
+        pos = nx.spring_layout(sub_nx, weight=None)
 
         tmp = np.array([x[0] for x in pos.values()])
         x_min, x_max = tmp.min(), tmp.max()
@@ -3536,7 +3519,7 @@ class Ontology(object):
         if ndex_server is None:
             ndex_server = ddot.config.ndex_server
 
-        ndex = nc.Ndex(ndex_server, ndex_user, ndex_pass)
+        ndex_client = ndex2.client.Ndex2(host=ndex_server, username=ndex_user, password=ndex_pass)
         term_2_uuid = {}
        
         start = time.time()
@@ -3634,8 +3617,10 @@ class Ontology(object):
                 #     network_sub.loc[network_sub[spring_feature] < min_children_term_weights, spring_feature] = 0.5*min_children_term_weights
                 #     network_sub[spring_feature] = network_sub[spring_feature] ** spring_weight
 
-                G_nx = nx.from_pandas_dataframe(network_sub, g1, g2,
-                                                edge_attr=features)
+                #G_nx = nx.from_pandas_dataframe(network_sub, g1, g2,
+                 #                               edge_attr=features)
+                G_nx = nx.from_pandas_edgelist(network_sub, g1, g2, edge_attr=features)
+
                 if node_attr is not None:
                     set_node_attributes_from_pandas(G_nx, node_attr)
 
@@ -3651,15 +3636,8 @@ class Ontology(object):
                     df.loc[genes_in, c] = True
                 df.rename(columns=lambda x: 'Group:'+x, inplace=True)
                 ddot.utils.set_node_attributes_from_pandas(G_nx, df)
-                
-                # # If a gene belongs to multiple children, then place it where it is most similar
-                # for g_i in (df.sum(1) > 0).nonzero():
-                #     g = genes[g_i]
-                #     choices = df.loc[g, :].nonzero()
-                #     network_sq.loc[g, :].argmax()                    
-
-
-                G = nx_to_NdexGraph(G_nx)
+                                   
+                G = ndex2.create_nice_cx_from_networkx(G_nx)
 
                 G.set_name('%s supporting network for %s' % (name, t))
                 G.set_network_attribute('Description', '%s supporting network for %s' % (name, t))
@@ -3671,8 +3649,7 @@ class Ontology(object):
                     if feature_types[f] == 'numeric':
                         G.set_network_attribute('%s min' % f, feature_mins[f])
                         G.set_network_attribute('%s max' % f, feature_maxs[f])
-#                for c in children:
-#                    G.set_network_attribute('Group:' + c, True)
+
                 G.set_network_attribute('Group', '|'.join(children))
 
                 # New: calculate the score threshold of this subnetwork
@@ -3681,7 +3658,6 @@ class Ontology(object):
 
                 if min_children_term_weights > 0:
                     G.set_network_attribute('Children weight', '|'.join(['{:.3f}'.format(w) for w in children_term_weights]))
-                    # G.set_network_attribute('Main Feature Default Cutoff', float(min_children_term_weights))
 
                 if isinstance(edge_groups, dict) and (len(edge_groups.keys()) > 0):
                     edge_group_string = []
@@ -3694,33 +3670,17 @@ class Ontology(object):
 
                 # New: only keep the biggest compoent in the network
                 G = max(nx.weakly_connected_component_subgraphs(G), key=len)
-                # # further remove degree == 1 nodes
-                # if len(G.nodes()) > 6:
-                #     low_deg_nodes = []
-                #     for v, deg in G.degree().items():
-                #         if deg <= 1:
-                #             low_deg_nodes.append(v)
-                #
-                #     while len(low_deg_nodes) != 0:
-                #         G.remove_nodes_from(low_deg_nodes)
-                #         low_deg_nodes = []
-                #         for v, deg in G.degree().items():
-                #             if deg <= 1:
-                #                 low_deg_nodes.append(v)
 
                 # New: compute a pre-layout to networks
                 if spring_feature != None:
-                    # G_cx = G.to_cx() # why converted back and forth
-                    # G = NdexGraph(G_cx)
                     gsim = layouts._create_simple_graph(G)
                     pos = nx.spring_layout(gsim, scale=200 * math.sqrt(gsim.number_of_nodes()), weight=spring_feature)
                     G.pos = pos
-                    # layouts.apply_directed_flow_layout(G, node_width=50, weight=spring_feature)
-
 
                 start_upload = time.time()
-                ndex_url = G.upload_to(ndex_server, ndex_user, ndex_pass, visibility=visibility)
+                ndex_url = G.upload_to(server=ndex_server, username=ndex_user, password=ndex_pass)
                 term_2_uuid[t] = parse_ndex_uuid(ndex_url)
+                ndex_client.set_network_system_properties(term_2_uuid[t], {'visibility': visibility})
                 upload_time = time.time() - start_upload
 
                 if verbose:
