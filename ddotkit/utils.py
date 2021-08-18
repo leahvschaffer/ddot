@@ -9,11 +9,11 @@ from datetime import datetime
 
 import pandas as pd
 import networkx as nx
+from tulip import tlp
 import numpy as np
 import ndex2
-    
-import ddotontology
-import ddotontology.config
+import ddotkit
+
 
 def print_time(*s):
     print(' '.join(map(str, s)), datetime.today())
@@ -148,11 +148,6 @@ def bubble_layout_nx(G, xmin=-750, xmax=750, ymin=-750, ymax=750, verbose=False)
        Dictionary mapping nodes to 2D coordinates. pos[node_name] -> (x,y)
 
     """
-    
-    from tulip import tlp
-#     from tulip import *
-#     from tulipgui import *
-    
     graph = tlp.newGraph()        
     nodes = graph.addNodes(len(G.nodes()))
     nodes_idx = make_index(G.nodes())    
@@ -574,7 +569,7 @@ def create_edgeMatrix(X, X_cols, X_rows, verbose=True, G=None, ndex2=True):
 
     X_bytes = X.tobytes()
     chunk_size = int(1e8) # 100MB
-    serialized_list = [{'v': base64.b64encode(X_bytes[s:e])} for i, (s, e) in enumerate(ddot.split_indices_chunk(len(X_bytes), chunk_size))]
+    serialized_list = [{'v': base64.b64encode(X_bytes[s:e])} for i, (s, e) in enumerate(ddotkit.split_indices_chunk(len(X_bytes), chunk_size))]
     if verbose:
         print('Broke up serialization into %s chunks' % len(serialized_list))
 
@@ -791,11 +786,11 @@ def ndex_to_sim_matrix(ndex_url,
     """
 
     if ndex_server is None:
-        ndex_server = ddot.config.ndex_server
+        ndex_server = ddotkit.config.ndex_server
     if ndex_user is None:
-        ndex_pass = ddot.config.ndex_user
+        ndex_pass = ddotkit.config.ndex_user
     if ndex_pass is None:
-        ndex_pass = ddot.config.ndex_pass
+        ndex_pass = ddotkit.config.ndex_pass
 
     if 'http' in ndex_url:
         ndex_server = parse_ndex_server(ndex_url)
@@ -1073,7 +1068,7 @@ def make_seed_ontology(sim,
 
     expand_kwargs : dict
 
-       Parameters for ddot.expand_seed() to identify an expanded set of genes
+       Parameters for ddotkit.expand_seed() to identify an expanded set of genes
 
     build_kwargs : dict
 
@@ -1134,7 +1129,7 @@ def make_seed_ontology(sim,
     df = melt_square(df_sq)
 
     # Build data-driven ontology
-    ont = ddot.Ontology.infer_ontology(df, verbose=verbose, **build_kwargs)
+    ont = ddotkit.Ontology.infer_ontology(df, verbose=verbose, **build_kwargs)
 
     ###############################
     # Align to Reference Ontology #
@@ -1194,8 +1189,8 @@ def make_seed_ontology(sim,
             ndex_kwargs['main_feature'] = 'similarity'
 
         description = (
-            'Data-driven ontology created by the function ddot.make_seed_ontology()'
-            'in the DDOT Python package (https://github.com/michaelkyu/ontology)'
+            'Data-driven ontology created by the function ddotkit.make_seed_ontology()'
+            'in the DDOT Python package (https://github.com/idekerlab/ddot)'
             '(parameters: %s' % ', '.join(['%s=%s' % (k,v) for k,v in build_kwargs.items()])
         )
 

@@ -10,10 +10,10 @@ visualization of biological hierarchies using a data structure called an ontolog
 
 .. note::
 
-    This is an **updated** version of `DDOT <https://github.com/michaelku/ddot>`__.
+    This is an **updated** version of **DDOT**
     Changes from original:
 
-    * Renamed from ``ddot`` to ``ddotontology`` to enable Pypi installation.
+    * Renamed from ``ddot`` to ``ddotkit`` to enable Pypi installation.
     * Updates to maintain compatibility with new version of
       `HiView <https://github.com/idekerlab/hiview>`__
     * A new script ``tohiview.py`` and a

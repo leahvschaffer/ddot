@@ -15,6 +15,8 @@ import shutil
 import io
 from io import StringIO
 import json
+import multiprocessing
+import numbers
 
 
 import numpy as np
@@ -24,10 +26,26 @@ import networkx as nx
 import igraph
 import scipy
 import scipy.sparse
+import scipy.cluster.hierarchy
 
 import ndex2
 
-from ddotontology.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
+import ddotkit
+from ddotkit.utils import time_print
+from ddotkit.utils import set_node_attributes_from_pandas
+from ddotkit.utils import parse_ndex_uuid
+from ddotkit.utils import parse_ndex_server
+from ddotkit.utils import make_index
+from ddotkit.utils import bubble_layout_nx
+from ddotkit.utils import split_indices_chunk
+from ddotkit.utils import invert_dict
+from ddotkit.utils import nx_edges_to_pandas
+from ddotkit.utils import nx_nodes_to_pandas
+from ddotkit.utils import ig_edges_to_pandas
+from ddotkit.utils import ig_nodes_to_pandas
+from ddotkit.utils import nx_set_tree_edges
+from ddotkit.utils import gridify
+from ddotkit.utils import set_edge_attributes_from_pandas
 
 def _collapse_node(g,
                    v,
@@ -199,15 +217,14 @@ def align_hierarchies(hier1,
         hier2 = to_file(hier2)
 
         if calculateFDRs is None:
-            top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddot)))
+            top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddotkit)))
             calculateFDRs = os.path.join(top_level, 'alignOntology', 'calculateFDRs')
 
-            #assert os.path.isdir(ddot.config.alignOntology)
-            #calculateFDRs = os.path.join(ddot.config.alignOntology, 'calculateFDRs')
+            #assert os.path.isdir(ddotkit.config.alignOntology)
+            #calculateFDRs = os.path.join(ddotkit.config.alignOntology, 'calculateFDRs')
         assert os.path.isfile(calculateFDRs)
 
         if threads is None:
-            import multiprocessing
             threads = multiprocessing.cpu_count()
 
         output_dir = tempfile.mkdtemp(prefix='tmp')
@@ -419,6 +436,7 @@ def parse_gaf(gaf):
 
 #    return df.loc[:, ['DB Object ID', 'GO ID']].values.tolist()
     return df
+
 
 class Ontology(object):
     """A Python representation for constructing, analyzing, and
@@ -806,7 +824,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
         
@@ -1470,7 +1488,7 @@ class Ontology(object):
         Returns
         -------
 
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """.format(cls.GENE_TERM_EDGETYPE)
 
@@ -1579,8 +1597,6 @@ class Ontology(object):
         clustering produces a binary tree.
 
         """
-        import scipy.cluster.hierarchy
-
         rootnode, nodelist = scipy.cluster.hierarchy.to_tree(Z, rd=True)
         leaves = set(scipy.cluster.hierarchy.leaves_list(Z))
         hierarchy, mapping = [], []
@@ -1627,16 +1643,16 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
 
         if ndex_server is None:
-            ndex_server = ddot.config.ndex_server
+            ndex_server = ddotkit.config.ndex_server
         if ndex_user is None:
-            ndex_user = ddot.config.ndex_user
+            ndex_user = ddotkit.config.ndex_user
         if ndex_pass is None:
-            ndex_pass = ddot.config.ndex_pass
+            ndex_pass = ddotkit.config.ndex_pass
             
         if '/' in ndex_uuid:
             ndex_server = parse_ndex_server(ndex_uuid)
@@ -1672,7 +1688,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
         
@@ -1716,7 +1732,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
         
@@ -1776,7 +1792,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
                 
@@ -1841,7 +1857,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.ddot.Ontology
+        : ddotkit.ddot.Ontology
 
             A new Ontology object
 
@@ -1855,10 +1871,10 @@ class Ontology(object):
             ont = self.propagate(direction='forward', inplace=False)
             ont.propagate(direction='reverse', inplace=True)
 
-            top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddot)))
+            top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddotkit)))
             collapseRedundantNodes = os.path.join(top_level, 'alignOntology', 'collapseRedundantNodes')
-            # assert os.path.isdir(ddot.config.alignOntology)
-            # collapseRedundantNodes = os.path.join(ddot.config.alignOntology, 'collapseRedundantNodes')
+            # assert os.path.isdir(ddotkit.config.alignOntology)
+            # collapseRedundantNodes = os.path.join(ddotkit.config.alignOntology, 'collapseRedundantNodes')
             assert os.path.isfile(collapseRedundantNodes)
 
             with tempfile.NamedTemporaryFile('w', delete=False) as f:
@@ -1914,15 +1930,15 @@ class Ontology(object):
 
         Parameters
         -----------
-        ont1 : ddot.Ontology.Ontology
+        ont1 : ddotkit.Ontology.Ontology
 
-        ont2 : ddot.Ontology.Ontology
+        ont2 : ddotkit.Ontology.Ontology
 
         Returns
         -------
-        ont1_collapsed : ddot.Ontology.Ontology
+        ont1_collapsed : ddotkit.Ontology.Ontology
 
-        ont2_collapsed : ddot.Ontology.Ontology
+        ont2_collapsed : ddotkit.Ontology.Ontology
 
         """
 
@@ -2065,7 +2081,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
         
@@ -2171,7 +2187,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
 
@@ -2446,7 +2462,7 @@ class Ontology(object):
             sca, nodes = self.get_best_ancestors(include_genes=include_genes)    
             nodes_subset = self.genes if include_genes else []
             nodes_subset += self.terms if include_terms else []
-            nodes_idx = ddot.utils.make_index(nodes)
+            nodes_idx = ddotkit.utils.make_index(nodes)
             idx = [nodes_idx[v] for v in nodes_subset]
             sca = sca[idx, :][:, idx]
 
@@ -2709,7 +2725,6 @@ class Ontology(object):
         
         graph = self.to_igraph(include_genes=True, spanning_tree=False)
 
-        import numbers
         if weights is None:
             weights = 1
             
@@ -2876,7 +2891,7 @@ class Ontology(object):
 
         Returns
         -------
-        : ddot.Ontology.Ontology
+        : ddotkit.Ontology.Ontology
 
         """
             
@@ -3180,7 +3195,7 @@ class Ontology(object):
             ont = self
 
         if ndex_server is None:
-            ndex_server = ddot.config.ndex_server
+            ndex_server = ddotkit.config.ndex_server
             
         if (network is not None) and (term_2_uuid is None):
             if subnet_max_term_size is None:
@@ -3220,9 +3235,9 @@ class Ontology(object):
                 style=style)
 
         if visible_term_attr is not None:
-            df = ddot.utils.nx_nodes_to_pandas(G, visible_term_attr)
+            df = ddotkit.utils.nx_nodes_to_pandas(G, visible_term_attr)
             df.rename(columns=lambda x: 'Display:' + x, inplace=True)
-            ddot.utils.set_node_attributes_from_pandas(G, df)
+            ddotkit.utils.set_node_attributes_from_pandas(G, df)
             G.set_network_attribute('Display', '|'.join(visible_term_attr))
             
         if verbose:  print('Uploading to NDEx')
@@ -3298,7 +3313,7 @@ class Ontology(object):
                 if 'Vis:Visible' not in data and 'Is_Tree_Edge' in data:
                     data['Vis:Visible'] = data['Is_Tree_Edge']=='Tree'
 
-            style = ddot.config.get_passthrough_style()
+            style = ddotkit.config.get_passthrough_style()
         else:
             raise Exception('Unsupported style')
                 
@@ -3518,7 +3533,7 @@ class Ontology(object):
             ont = self
 
         if ndex_server is None:
-            ndex_server = ddot.config.ndex_server
+            ndex_server = ddotkit.config.ndex_server
 
         ndex_client = ndex2.client.Ndex2(host=ndex_server, username=ndex_user, password=ndex_pass)
         term_2_uuid = {}
@@ -3550,7 +3565,7 @@ class Ontology(object):
             tmp = network[features]
             network[features] = (tmp - tmp.mean()) / tmp.std()
 
-#        network_sq = ddot.utils.pivot_square(network, g1, g2, main_feature)
+#        network_sq = ddotkit.utils.pivot_square(network, g1, g2, main_feature)
             
         # Calculate the min/max range of features
         numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
@@ -3636,7 +3651,7 @@ class Ontology(object):
                         # G_nx.node[g]['Group:'+c] = True
                     df.loc[genes_in, c] = True
                 df.rename(columns=lambda x: 'Group:'+x, inplace=True)
-                ddot.utils.set_node_attributes_from_pandas(G_nx, df)
+                ddotkit.utils.set_node_attributes_from_pandas(G_nx, df)
                                    
                 G = ndex2.create_nice_cx_from_networkx(G_nx)
 

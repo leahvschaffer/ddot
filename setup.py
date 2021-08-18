@@ -3,7 +3,7 @@ import os
 import re
 from setuptools import setup, find_packages
 
-with open(os.path.join('ddotontology', '__init__.py')) as ver_file:
+with open(os.path.join('ddotkit', '__init__.py')) as ver_file:
     for line in ver_file:
         if line.startswith('__version__'):
             version = re.sub("'", "", line[line.index("'"):])
@@ -24,7 +24,7 @@ requirements = [
     'tulip-python'
 ]
 
-setup(name='ddotontology',
+setup(name='ddotkit',
       version=version,
       description='Data-Driven Ontology Toolkit v2',
       url='http://github.com/idekerlab/ddot',
@@ -56,10 +56,11 @@ setup(name='ddotontology',
           'Programming Language :: Python :: 3.9'
       ],
       keywords='ontology hierarchy',
-      packages=['ddotontology'],
-      package_dir={'ddotontology': 'ddotontology'},
-      data_files=[('style', ['ddotontology/ontology_style.cx',
-                             'ddotontology/passthrough_style.cx'])],
+      packages=['ddotkit'],
+      package_dir={'ddotkit': 'ddotkit'},
+      data_files=[('style', ['ddotkit/ontology_style.cx',
+                             'ddotkit/passthrough_style.cx'])],
       install_requires=requirements,
       include_package_data=True,
+      test_suite='tests',
       zip_safe=False)

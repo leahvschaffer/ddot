@@ -1,7 +1,8 @@
 
 import argparse
 import pandas as pd
-from ddotontology import *
+import numpy as np
+from ddotkit import *
 import ndex2.client as nc2
 
 def geneset2pairs(genelist):
