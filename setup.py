@@ -1,18 +1,42 @@
+
+import os
+import re
 from setuptools import setup, find_packages
 
-setup(name='ddot',
-      version='1.0',
-      description='Data-Driven Ontology Toolkit',
-      url='http://github.com/michaelkyu/ddot',
-      author='Michael Ku Yu',
-      author_email='michaelyu@alum.mit.edu',
+with open(os.path.join('ddotontology', '__init__.py')) as ver_file:
+    for line in ver_file:
+        if line.startswith('__version__'):
+            version = re.sub("'", "", line[line.index("'"):])
+
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
+
+with open('HISTORY.rst') as history_file:
+    history = history_file.read()
+
+requirements = [
+    'pandas>=0.20',
+    'numpy',
+    'scipy',
+    'ndex2',
+    'python-igraph',
+    'networkx',
+    'tulip-python'
+]
+
+setup(name='ddotontology',
+      version=version,
+      description='Data-Driven Ontology Toolkit v2',
+      url='http://github.com/idekerlab/ddot',
+      author='Christopher Churas',
+      author_email='churas.camera@gmail.com',
       license='MIT',
       classifiers=[
           # How mature is this project? Common values are 
           #   3 - Alpha
           #   4 - Beta
           #   5 - Production/Stable
-          'Development Status :: 5',
+          'Development Status :: 3',
 
           # Indicate who your project is intended for
           'Intended Audience :: Developers',
@@ -25,12 +49,17 @@ setup(name='ddot',
 
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
-          'Programming Language :: Python :: 2.7',
+
           'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.5'
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9'
       ],
       keywords='ontology hierarchy',
-      packages=['ddot'],
-      install_requires=['pandas>=0.20', 'numpy', 'scipy', 'ndex-dev', 'python-igraph', 'networkx', 'tulip-python'],
+      packages=['ddotontology'],
+      package_dir={'ddotontology': 'ddotontology'},
+      data_files=[('style', ['ddotontology/ontology_style.cx',
+                             'ddotontology/passthrough_style.cx'])],
+      install_requires=requirements,
       include_package_data=True,
       zip_safe=False)

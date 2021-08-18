@@ -1,16 +1,6 @@
-include README.md
+include README.rst
+include HISTORY.rst
 include LICENSE.txt
 
-include ddot/clixo_0.3/clixo
-include ddot/clixo_0.3/clustersToDAG
-include ddot/clixo_0.3/extractOnt
-
-include ddot/alignOntology/alignOntology
-include ddot/alignOntology/calculateFDRs
-include ddot/alignOntology/calculateFDRs_background
-include ddot/alignOntology/calculateFDRsForAlignment
-include ddot/alignOntology/collapseRedundantNodes
-include ddot/alignOntology/ontologyTermStats
-
-include ddot/ontology_style.cx
-include ddot/passthrough_style.cx
+include ddotontology/ontology_style.cx
+include ddotontology/passthrough_style.cx

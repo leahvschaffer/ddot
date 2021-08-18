@@ -1,32 +1,33 @@
 from __future__ import absolute_import, print_function, division
 
-import itertools, multiprocessing, logging, os, collections, random, math, sys, time
-from itertools import groupby, combinations
-from operator import *
+import itertools
+import os
+import random
+import math
+import time
+
 from collections import Counter
 import tempfile
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 import inspect
 import shlex
 import shutil
 import io
 from io import StringIO
 import json
-import datetime
+
 
 import numpy as np
 import pandas as pd
 import pandas.io.pickle
 import networkx as nx
 import igraph
-import scipy, scipy.sparse
-from scipy.sparse import csr_matrix, coo_matrix
-from scipy.stats import hypergeom
+import scipy
+import scipy.sparse
+
 import ndex2
 
-import ddot
-import ddot.config
-from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
+from ddotontology.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
 
 def _collapse_node(g,
                    v,

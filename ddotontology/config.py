@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
-import os, inspect, io
-import json
+import os
+import inspect
 
-import ddot
+
+import ddotontology
 import ndex2
 
 ###########################################
@@ -22,7 +23,7 @@ passthrough_style = None
 def get_passthrough_style():
     global passthrough_style
     if passthrough_style is None:
-        top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddot)))
+        top_level = os.path.dirname(os.path.abspath(inspect.getfile(ddotontology)))
         #with io.open(os.path.join(top_level, 'passthrough_style.cx')) as f:
          #   passthrough_style = ndex2.create_nice_cx_from_file(f)
         passthrough_style = ndex2.create_nice_cx_from_file(os.path.join(top_level, 'passthrough_style.cx'))
