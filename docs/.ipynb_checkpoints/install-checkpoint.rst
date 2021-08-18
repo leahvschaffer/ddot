@@ -23,7 +23,7 @@ There are multiple ways to install DDOT.
       conda update conda
 
       # Install dependencies
-      conda install pandas numpy scipy networkx=1.11
+      conda install pandas numpy scipy networkx>=2.0
       conda install -c conda-forge python-igraph
       conda install libiconv # Needed for igraph to run properly
       pip install tulip-python ndex-dev
@@ -58,7 +58,7 @@ Dependencies
 -  `numpy`_
 -  `scipy`_
 -  `pandas>=0.20`_
--  `networkx=1.11`_ You might have networkx>=2.0 already installed, but this is incompatible with ddot.
+-  `networkx>=2.0`_
 -  `python-igraph`_ Recommend installing through `conda`_ or `pip`_.
 -  `ndex-dev`_ Recommend installing through `pip <https://pypi.python.org/pypi/ndex-dev>`__.
 -  `tuplip-python`_ Recommend installing through `pip <https://pypi.python.org/pypi/tulip-python>`__.
@@ -84,7 +84,7 @@ A docker image of DDOT can be pulled from Docker Hub.
 .. _numpy: https://docs.scipy.org/doc/
 .. _scipy: https://docs.scipy.org/doc/
 .. _pandas>=0.20: http://pandas.pydata.org/
-.. _networkx=1.11: https://networkx.github.io/
+.. _networkx>=2.0: https://networkx.github.io/
 .. _python-igraph: http://igraph.org/python/
 .. _conda: https://anaconda.org/conda-forge/python-igraph
 .. _pip: https://pypi.python.org/pypi/python-igraph/0.7

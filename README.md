@@ -1,19 +1,20 @@
-# Update in v1.0.1 (2020 summer)
+# Update in v1.0.1
 
-* Maintain the compatibility with HiView, which has improved significantly after the original DDOT publication
-* A new script (`tohiview.py`) and a [tutorial](https://github.com/fanzheng10/ddot/blob/master/examples/1.0.1_HiView_tutorial/hiview_tutorial.ipynb) of uploading to HiView server has been added
-* Running [CliXO 0.3](https://github.com/mhk7/clixo_0.3), [CliXO 1.0](https://github.com/fanzheng10/CliXO-1.0) and [alignOntology](https://github.com/mhk7/alignOntology) from DDOT is not longer supported (in order to make this package lighter and more "Pythonic"). Please visit the original repositories of these programs.
-* We only tested new content with Python >=3.6, as Python 2 has been declared obsoleted.
+- Maintain the compatibility with HiView, which has improved significantly after the original DDOT publication
+- A new script (`tohiview.py`) and a [tutorial](https://github.com/fanzheng10/ddot/blob/master/examples/1.0.1_HiView_tutorial/hiview_tutorial.ipynb) of uploading to HiView server has been added
+- Running [CliXO 0.3](https://github.com/mhk7/clixo_0.3), [CliXO 1.0](https://github.com/fanzheng10/CliXO-1.0) and [alignOntology](https://github.com/mhk7/alignOntology) from DDOT is not longer supported (in order to make this package lighter and more "Pythonic"). Please visit the original repositories of these programs.
+- We only tested new content with Python >=3.6, as Python 2 has been declared obsoleted.
 
 New dependencies:
-* [ndex2-client](https://pypi.org/project/ndex2/)
+
+- [ndex2-client](https://pypi.org/project/ndex2/)
 
 # The Data-Driven Ontology Toolkit (DDOT)
 
-The Data-Driven Ontology Toolkit (DDOT) facilitates the inference, analysis, and visualization of biological hierarchies using a data structure called an ontology. 
+The Data-Driven Ontology Toolkit (DDOT) facilitates the inference, analysis, and visualization of biological hierarchies using a data structure called an ontology.
 
-* Open-source Python package under MIT license. Supports Python 2.7 or >=3.6.
-* The [HiView](http://hiview.ucsd.edu) web application visualizes hierarchical structure and the biological evidence for that structure.
+- Open-source Python package under MIT license. Supports Python 2.7 or >=3.6.
+- The [HiView](http://hiview.ucsd.edu) web application visualizes hierarchical structure and the biological evidence for that structure.
 
 # Documentation
 
@@ -27,51 +28,52 @@ Please post questions or issues to the [Google Groups forum](https://groups.goog
 
 DDOT requires the following software
 
-* Python v2.7 or >=3.6
-* [numpy](https://docs.scipy.org/doc/)
-* [scipy](https://docs.scipy.org/doc/)
-* [pandas>=0.20](http://pandas.pydata.org/)
-* [networkx=1.11](https://networkx.github.io/). Note that networkx>=2.0 is incompatible with ddot.
-* [python-igraph](http://igraph.org/python/). Recommend installing through [anaconda](https://anaconda.org/conda-forge/python-igraph) or [pip](https://pypi.python.org/pypi/python-igraph/0.7).
-* [ndex-dev](https://github.com/ndexbio/ndex-python). Recommend installing through [pip](https://pypi.python.org/pypi/ndex-dev).
-* [tulip-python](https://pypi.python.org/pypi/tulip-python). Recommend installing through [pip](https://pypi.python.org/pypi/tulip-python).
+- Python v2.7 or >=3.6
+- [numpy](https://docs.scipy.org/doc/)
+- [scipy](https://docs.scipy.org/doc/)
+- [pandas>=0.20](http://pandas.pydata.org/)
+- [networkx>2.0](https://networkx.github.io/).
+- [python-igraph](http://igraph.org/python/). Recommend installing through [anaconda](https://anaconda.org/conda-forge/python-igraph) or [pip](https://pypi.python.org/pypi/python-igraph/0.7).
+- [ndex-dev](https://github.com/ndexbio/ndex-python). Recommend installing through [pip](https://pypi.python.org/pypi/ndex-dev).
+- [tulip-python](https://pypi.python.org/pypi/tulip-python). Recommend installing through [pip](https://pypi.python.org/pypi/tulip-python).
 
 The recommended method for installing these dependencies is to use the [Anaconda](https://conda.io/docs/user-guide/install/download.html) distrubution of Python, and then install Python packages via the conda and pip repositories.
 
-  ```bash
-  # Create and activate a virtual environment (optional, but recommended).
-  # Learn more about virtual environments at https://conda.io/docs/user-guide/tasks/manage-environments.html
-  conda create -n <environment_name>
-  source activate <environment_name>
-   
-  # Install dependencies
-  conda install -y pandas numpy scipy networkx=1.11
-  conda install -y -c conda-forge python-igraph
-  conda install -y libiconv # Needed for igraph to run properly
-  pip install tulip-python
-  pip install ndex-dev
-  ```   
+```bash
+# Create and activate a virtual environment (optional, but recommended).
+# Learn more about virtual environments at https://conda.io/docs/user-guide/tasks/manage-environments.html
+conda create -n <environment_name>
+source activate <environment_name>
+
+# Install dependencies
+conda install -y pandas numpy scipy networkx>=2.0
+conda install -y -c conda-forge python-igraph
+conda install -y libiconv # Needed for igraph to run properly
+pip install tulip-python
+pip install ndex-dev
+```
 
 ### Install the `ddot` Python package
 
 After dependencies are satisfied, download or clone this repository
 
-  ```bash
-  git clone https://github.com/[Host_username]/ddot.git
-  ```
-  
+```bash
+git clone https://github.com/[Host_username]/ddot.git
+```
+
 Install ddot using `pip`. If you are installing within a conda virtual environment, remember to enter the environment with `source activate <environment_name>` before running `pip`.
 
-  ```bash
-  pip install /path/to/ddot_repository
-  ```
+```bash
+pip install /path/to/ddot_repository
+```
 
 ### Known installation problems and tips
-* Older versions of Anaconda (<= v4.5) might not install the dependencies correctly. Consider updating Anaconda to the newest version by running `conda update conda` (outside of a virtual environment).
-* Make sure that no other local installations of Python is conflicting with Anaconda. In particular, check that the directory `$HOME/.local/lib` does not contain Python packages. If it does contain Python packages, check that those packages are not being imported. 
-* If `ddot` does not import successfully in a Python terminal, first check that the dependencies can be imported. In particular, check that `import ndex, networkx, igraph, tulip, numpy, scipy, pandas` works.
-* Please raise any other installation problems as an issue on this github repo.
-  
+
+- Older versions of Anaconda (<= v4.5) might not install the dependencies correctly. Consider updating Anaconda to the newest version by running `conda update conda` (outside of a virtual environment).
+- Make sure that no other local installations of Python is conflicting with Anaconda. In particular, check that the directory `$HOME/.local/lib` does not contain Python packages. If it does contain Python packages, check that those packages are not being imported.
+- If `ddot` does not import successfully in a Python terminal, first check that the dependencies can be imported. In particular, check that `import ndex, networkx, igraph, tulip, numpy, scipy, pandas` works.
+- Please raise any other installation problems as an issue on this github repo.
+
 # Docker image (v1.0)
 
 A Docker image of DDOT is located online at Docker Hub. To learn more about Docker, see https://docs.docker.com/get-started/
@@ -103,7 +105,7 @@ After running the image, you will be inside the container's command line. Here, 
 ```
 (base) root@<container>:/$ python
 
-Python 2.7.14 |Anaconda, Inc.| (default, Dec  7 2017, 17:05:42) 
+Python 2.7.14 |Anaconda, Inc.| (default, Dec  7 2017, 17:05:42)
 [GCC 7.2.0] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import ddot
@@ -121,4 +123,4 @@ Next, open up your web browser and access the notebooks at http://0.0.0.0:8888/.
 
 If you find DDOT helpful in your research, please cite
 
-Michael Ku Yu, Jianzhu Ma, Keiichiro Ono, Fan Zheng, Samson H Fong, Aaron Gary, Jing Chen, Barry Demchak, Dexter Pratt, Trey Ideker. ["DDOT: A Swiss Army Knife for Investigating Data-Driven Biological Ontologies"](https://doi.org/10.1016/j.cels.2019.02.003). Cell Systems. 2019 Mar 27;8(3):267-273. 
+Michael Ku Yu, Jianzhu Ma, Keiichiro Ono, Fan Zheng, Samson H Fong, Aaron Gary, Jing Chen, Barry Demchak, Dexter Pratt, Trey Ideker. ["DDOT: A Swiss Army Knife for Investigating Data-Driven Biological Ontologies"](https://doi.org/10.1016/j.cels.2019.02.003). Cell Systems. 2019 Mar 27;8(3):267-273.

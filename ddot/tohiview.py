@@ -41,7 +41,7 @@ def support_data_focus(pairs, rf_score, netlinks=None):
         gene2.append(g2)
 
     df = pd.DataFrame.from_dict(dict([('Gene1', gene1), ('Gene2', gene2)]))
-    df_rf = pd.read_table(rf_score, sep='\t', header=None)
+    df_rf = pd.read_table(rf_score, sep='\t', header=None, float_precision='round_trip')
     if df_rf.shape[1] < 3:
         df_rf[2] = 1.0
     df_rf.rename(columns = {0:'Gene1', 1:'Gene2', 2:'Score'}, inplace=True)
@@ -58,7 +58,7 @@ def support_data_focus(pairs, rf_score, netlinks=None):
             name, loc = info[0], info[1]
             if len(info) == 3:
                 data_categories[name] = info[2]
-            df_net = pd.read_table(loc, sep='\t', header=None)
+            df_net = pd.read_table(loc, sep='\t', header=None, float_precision='round_trip')
             df_net.rename(columns = {0:'Gene1', 1:'Gene2', 2:name}, inplace=True)
             df_net[['Gene1', 'Gene2']] = np.sort(df_net[['Gene1', 'Gene2']], axis=1)
             df = df.merge(df_net, how='left', on = ['Gene1', 'Gene2'])
@@ -128,7 +128,7 @@ def create_term_to_uuid(ont, hname, terms, subnet_links, subnet_size, rf_score, 
     return term_uuid
 
 def upload_main_hierarchy(ont, name, term_uuid, visible_cols):
-    url, ont_ndexgraph = ont.to_ndex(name=name,
+    url, ont_nice_cx = ont.to_ndex(name=name,
                                      ndex_server=ndex_server, ndex_user=ndex_user, ndex_pass=ndex_pass,
                                      term_2_uuid=term_uuid,
                                      layout='bubble-collect', style='passthrough',
