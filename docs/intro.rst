@@ -89,8 +89,7 @@ How to cite
 If you use DDOT for your research, please cite
 
 Yu MK, Ma J, Ono K, Zheng F, Fong S, Gary A, Chen J, Demchak B, Pratt
-D, Ideker T. "A swiss-army knife for hierarchical modeling of
-biological systems." (in preparation)
+D, Ideker T. `DDOT: A Swiss Army Knife for Investigating Data-Driven Biological Ontologies <https://doi.org/10.1016/j.cels.2019.02.003>`__. Cell Systems. 2019 Mar 27;8(3):267-273.
    
 
 References
