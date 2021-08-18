@@ -526,14 +526,37 @@ def parse_ndex_uuid(ndex_url):
         return ndex_url.split('v2/network/')[1]
     elif '#/network/' in ndex_url:
         return ndex_url.split('#/network/')[1]
+    elif 'viewer/networks/' in ndex_url:
+        return ndex_url.split('viewer/networks/')[1]
     else:
         raise Exception("Not a valid NDEx URL: %s" % ndex_url)
 
+
 def parse_ndex_server(ndex_url):
+    """
+    Given an NDEx URL to a network, this function returns
+    the base URL of the NDEx server by looking for one of the
+    following text fragments in the url and removing it along
+    with any text to right
+
+    .. code-block::
+
+       v2/network/
+       #/network/
+       viewer/networks/
+
+
+    :param ndex_url: URL to network on NDEx
+    :raises Exception: If one of the above text fragments is NOT
+                       in URL
+    :return: Base URL of NDEx server
+    """
     if 'v2/network/' in ndex_url:
         return ndex_url.split('v2/network/')[0]
     elif '#/network/' in ndex_url:
         return ndex_url.split('#/network/')[0]
+    elif 'viewer/networks/' in ndex_url:
+        return ndex_url.split('viewer/networks/')[0]
     else:
         raise Exception("Not a valid NDEx URL: %s" % ndex_url)    
 
