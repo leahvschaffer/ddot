@@ -1,7 +1,7 @@
 Installation
 ============
 
-DDOT supports Python 2.7 or >=3.5. DDOT can be installed through standard Python environments or through a Docker image.
+DDOT supports Python>=3.6. DDOT can be installed through standard Python environments or through a Docker image.
 
 Installation Methods
 --------------------
@@ -54,13 +54,13 @@ There are multiple ways to install DDOT.
 Dependencies
 ------------
 
--  Python 2.7 or >=3.6
+-  Python >=3.6
 -  `numpy`_
 -  `scipy`_
 -  `pandas>=0.20`_
 -  `networkx>=2.0`_
 -  `python-igraph`_ Recommend installing through `conda`_ or `pip`_.
--  `ndex-dev`_ Recommend installing through `pip <https://pypi.python.org/pypi/ndex-dev>`__.
+-  `ndex2`_ Recommend installing through `pip <https://pypi.python.org/pypi/ndex-dev>`__.
 -  `tuplip-python`_ Recommend installing through `pip <https://pypi.python.org/pypi/tulip-python>`__.
 
 Docker image
@@ -79,7 +79,7 @@ A docker image of DDOT can be pulled from Docker Hub.
    docker run -i -t michaelkyu/ddot-anaconda2
 
 
-.. _source code: https://github.com/michaelkyu/ddot   
+.. _source code: https://github.com/idekerlab/ddot
 .. _Anaconda distribution: https://conda.io/docs/user-guide/install/download.html
 .. _numpy: https://docs.scipy.org/doc/
 .. _scipy: https://docs.scipy.org/doc/
@@ -88,6 +88,6 @@ A docker image of DDOT can be pulled from Docker Hub.
 .. _python-igraph: http://igraph.org/python/
 .. _conda: https://anaconda.org/conda-forge/python-igraph
 .. _pip: https://pypi.python.org/pypi/python-igraph/0.7
-.. _ndex-dev: https://github.com/ndexbio/ndex-python
+.. _ndex2: https://pypi.python.org/project/ndex2
 .. _tuplip-python: https://pypi.python.org/pypi/tulip-python
 .. _examples: examples
