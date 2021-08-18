@@ -3,5 +3,5 @@
 Utility Functions
 =================
 
-.. automodule:: ddot.utils
+.. automodule:: ddotkit.utils
    :members:
