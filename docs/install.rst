@@ -79,7 +79,7 @@ A docker image of DDOT can be pulled from Docker Hub.
    docker run -i -t michaelkyu/ddot-anaconda2
 
 
-.. _source code: https://github.com/michaelkyu/ddot   
+.. _source code: https://github.com/idekerlab/ddot
 .. _Anaconda distribution: https://conda.io/docs/user-guide/install/download.html
 .. _numpy: https://docs.scipy.org/doc/
 .. _scipy: https://docs.scipy.org/doc/
