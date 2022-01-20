@@ -30,7 +30,7 @@ DDOT requires the following software
 * Python v2.7 or >=3.6
 * [numpy](https://docs.scipy.org/doc/)
 * [scipy](https://docs.scipy.org/doc/)
-* [pandas>=0.20](http://pandas.pydata.org/)
+* [pandas>=0.24](http://pandas.pydata.org/)
 * [networkx=1.11](https://networkx.github.io/). Note that networkx>=2.0 is incompatible with ddot.
 * [python-igraph](http://igraph.org/python/). Recommend installing through [anaconda](https://anaconda.org/conda-forge/python-igraph) or [pip](https://pypi.python.org/pypi/python-igraph/0.7).
 * [ndex-dev](https://github.com/ndexbio/ndex-python). Recommend installing through [pip](https://pypi.python.org/pypi/ndex-dev).
