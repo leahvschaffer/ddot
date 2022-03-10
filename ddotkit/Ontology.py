@@ -3625,7 +3625,8 @@ class Ontology(object):
                 network_sub = network.iloc[gene_pairs_idx, :]
                 network_sub = network_sub.loc[network_sub[main_feature] >= ont.node_attr.loc[t, 'Parent weight']]
 
-                if max_num_edges != None:
+                # filter network if max_num_edges is greater then 0
+                if max_num_edges != None and max_num_edges > 0:
                     network_sub.sort_values(by=main_feature, ascending=False, inplace=True)
                     network_sub = network_sub.iloc[:max_num_edges, :]
                 # New: apply some minimum string force so nodes will not fly away

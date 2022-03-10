@@ -1,6 +1,6 @@
 numpy
 scipy
-pandas>=0.2
+pandas>=0.24.0
 networkx
 python-igraph
 ndex2
