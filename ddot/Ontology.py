@@ -1126,32 +1126,30 @@ class Ontology(object):
                 dtype = int
         else:
             dtype = int
-                
-        for t in self.terms:
-            G.nodes[t][self.NODETYPE_ATTR] = self.TERM_NODETYPE
-            if ('Size' not in G.nodes[t]) or pd.isnull(G.nodes[t]['Size']):
-                G.nodes[t]['Size'] = dtype(self.term_sizes[self.terms_index[t]])
-            G.nodes[t]['isRoot'] = False
-        for g in self.genes:
-            G.nodes[g][self.NODETYPE_ATTR] = self.GENE_NODETYPE
-            if ('Size' not in G.nodes[g]) or pd.isnull(G.nodes[g]['Size']):
-                G.nodes[g]['Size'] = dtype(1)
-            G.nodes[g]['isRoot'] = False
 
         # Identify the root
         root = self.get_roots()[0]
-        G.nodes[root]['isRoot'] = True
 
-        # Set the node attribute 'Label'. If the node has a "Original
-        # Name" attribute, indicating that it is a duplicate, then use
-        # that. Otherwise, use the node's name.
-        for x in self.genes + self.terms:
-            data = G.nodes[x]            
-            if ('Label' not in data) or pd.isnull(data['Label']):
-                if ('Original_Name' in data) and (not pd.isnull(data['Original_Name'])):
-                    data['Label'] = data['Original_Name']
+        for n, v in G.nodes(data=True):
+            if n in self.terms:
+                v[self.NODETYPE_ATTR] = self.TERM_NODETYPE
+                v['isRoot'] = False
+                v['Size'] = dtype(self.term_sizes[self.terms_index[n]])
+            if n in self.genes:
+                v[self.NODETYPE_ATTR] = self.GENE_NODETYPE
+                v['Size'] = dtype(1)
+            if n == root:
+                v['isRoot'] = True
+
+            # Set the node attribute 'Label'. If the node has a "Original
+            # Name" attribute, indicating that it is a duplicate, then use
+            # that. Otherwise, use the node's name.
+            if 'Label' not in v:
+                if 'Original_Name' in v and (not pd.isnull(v['Original_Name'])):
+                    v['Label'] = v['Original_Name']
                 else:
-                    data['Label'] = x
+                    v['Label'] = n
+
 
         #################################
         ### Add edges and edge attributes
@@ -3225,9 +3223,9 @@ class Ontology(object):
             G.set_network_attribute('Display', '|'.join(visible_term_attr))
             
         if verbose:  print('Uploading to NDEx')
-        ont_url = G.upload_to(server=ndex_server, username=ndex_user, password=ndex_pass)
+
         ndex_client = ndex2.client.Ndex2(host=ndex_server, username=ndex_user, password=ndex_pass)
-        ndex_client.set_network_system_properties(parse_ndex_uuid(ont_url), {'visibility': visibility})
+        ont_url = ndex_client.save_new_network(G.to_cx(), visibility='PUBLIC')
         return ont_url, G
             
     def to_nice_cx(self,
