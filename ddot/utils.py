@@ -352,7 +352,7 @@ def set_node_attributes_from_pandas(G, node_attr, id_map=None):
                     v = v.item()
                 except:
                     pass
-                G.node[n][feature_name] = v
+                G.nodes[n][feature_name] = v
 
 def set_edge_attributes_from_pandas(G, edge_attr):
     """Modify edge attributes according to a pandas.DataFrame.
@@ -1323,12 +1323,19 @@ def gridify(parents, pos, G):
                   y_center * (1 - alpha) + y_parent * alpha)
         
 def nx_set_tree_edges(G, tree_edges):
-    nx.set_edge_attributes(
-        G,
-        {(s,t) : 'Tree' if ((s,t) in tree_edges) else 'Not_Tree'
-         for s, t in G.edges(data=False)},
-        'Is_Tree_Edge'
-    )
+
+    tree_attrs = {}
+
+    for edge_tuple in G.edges(data=False):
+        if edge_tuple in tree_edges:
+            is_tree_edge_val = 'Tree'
+        else:
+            is_tree_edge_val = 'Not_Tree'
+        tree_attrs[edge_tuple] = {'Is_Tree_Edge': is_tree_edge_val}
+
+
+    nx.set_edge_attributes(G, tree_attrs)
+
 
 def color_gradient(ratio, min_col='#FFFFFF', max_col='#D65F5F', output_hex=True):
     """Calculate a proportional mix between two colors.
