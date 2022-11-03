@@ -131,7 +131,7 @@ def upload_main_hierarchy(ont, name, term_uuid, visible_cols):
     url, ont_nice_cx = ont.to_ndex(name=name,
                                      ndex_server=ndex_server, ndex_user=ndex_user, ndex_pass=ndex_pass,
                                      term_2_uuid=term_uuid,
-                                     layout='bubble-collect', style='passthrough',
+                                     layout=None, style='passthrough',
                                      visible_term_attr=visible_cols,
                                      verbose=False)
     # print(url)
