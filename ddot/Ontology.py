@@ -419,6 +419,7 @@ def parse_gaf(gaf):
 #    return df.loc[:, ['DB Object ID', 'GO ID']].values.tolist()
     return df
 
+
 class Ontology(object):
     """A Python representation for constructing, analyzing, and
     manipulating the hierarchical structure of ontologies.
@@ -3310,7 +3311,7 @@ class Ontology(object):
         if name is not None:
             G.set_name(name)
         if description is not None:
-            G.set_network_attribute('Description', description)
+            G.set_network_attribute('description', description)
             
         if style:
             G.apply_style_from_network(style)
@@ -3639,7 +3640,7 @@ class Ontology(object):
                 G = ndex2.create_nice_cx_from_networkx(G_nx)
 
                 G.set_name('%s supporting network for %s' % (name, t))
-                G.set_network_attribute('Description', '%s supporting network for %s' % (name, t))
+                G.set_network_attribute('description', '%s supporting network for %s' % (name, t))
                 G.set_network_attribute('Main Feature', main_feature)
                 for f in features:
                     if (f == spring_feature) and (f != main_feature):
