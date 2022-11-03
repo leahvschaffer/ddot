@@ -337,8 +337,7 @@ def set_node_attributes_from_pandas(G, node_attr, id_map=None):
     node_attr : pandas.DataFrame
 
     """
-    
-    G_nodes = set(G.nodes())
+    G_nodes = set(G.nodes)
     node_attr = node_attr.loc[[x for x in node_attr.index if x in G_nodes], :]
     if node_attr is not None:
         for feature_name, feature in node_attr.iteritems():
