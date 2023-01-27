@@ -514,6 +514,19 @@ def ig_edges_to_pandas(G, attr_list=None):
     
     return df    
 
+
+def wait_for_network_to_be_ready(client, netid,
+                                 num_retries=5, retry_wait=0.5):
+    retrycount = 1
+    while retrycount < num_retries:
+        netsum = client.get_network_summary(network_id=netid)
+        if netsum['completed'] is True:
+            return netsum
+        retrycount += 1
+        time.sleep(retry_wait)
+    return None
+
+
 def parse_ndex_uuid(ndex_url):
     """Extracts the NDEx UUID from a URL
 
@@ -1352,3 +1365,53 @@ def color_gradient(ratio, min_col='#FFFFFF', max_col='#D65F5F', output_hex=True)
     else:
         return mix_col_rgb
 
+
+def _cartesian(G):
+    """
+    Converts node coordinates from a :py:class:`networkx.Graph` object
+    to a list of dicts with following format:
+
+    [{'node': <node id>,
+      'x': <x position>,
+      'y': <y position>}]
+
+    :param G:
+    :return: coordinates
+    :rtype: list
+    """
+    return [{'node': n,
+             'x': float(G.pos[n][0]),
+             'y': -float(G.pos[n][1])} for n in G.pos]
+
+def apply_simple_spring_layout(network, iterations=50):
+    """
+    Applies simple spring network by using
+    :py:func:`networkx.drawing.spring_layout` and putting the
+    coordinates into 'cartesianLayout' aspect on the 'network' passed
+    in
+
+    :param network: Network to update
+    :type network: :py:class:`~ndex2.nice_cx_network.NiceCXNetwork`
+    :param iterations: Number of iterations to use for networkx spring layout call
+                       default is 50
+    :type iterations: int
+    :return: None
+    """
+
+    num_nodes = len(network.get_nodes())
+    my_networkx = network.to_networkx(mode='default')
+    if num_nodes < 10:
+        nodescale = num_nodes*20
+    elif num_nodes < 20:
+        nodescale = num_nodes*15
+    elif num_nodes < 100:
+        nodescale = num_nodes*10
+    else:
+        nodescale = num_nodes*5
+
+    my_networkx.pos = nx.drawing.spring_layout(my_networkx,
+                                               scale=nodescale,
+                                               k=1.8,
+                                               iterations=iterations)
+    cartesian_aspect = _cartesian(my_networkx)
+    network.set_opaque_aspect("cartesianLayout", cartesian_aspect)
