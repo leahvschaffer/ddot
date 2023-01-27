@@ -26,7 +26,16 @@ import ndex2
 
 import ddot
 import ddot.config
-from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify
+from ddot.utils import time_print, set_node_attributes_from_pandas, set_edge_attributes_from_pandas, parse_ndex_uuid, parse_ndex_server, make_index, update_nx_with_alignment, bubble_layout_nx, split_indices_chunk, invert_dict, make_network_public, nx_edges_to_pandas, nx_nodes_to_pandas, ig_edges_to_pandas, ig_nodes_to_pandas, melt_square, nx_set_tree_edges, gridify, apply_simple_spring_layout, wait_for_network_to_be_ready
+
+
+def get_networkx_version():
+    """
+
+    :return:
+    """
+    return float('.'.join(nx.__version__.split('.')[0:2]))
+
 
 def _collapse_node(g,
                    v,
@@ -3304,7 +3313,7 @@ class Ontology(object):
         if term_2_uuid:
             for t in self.terms:        
                 if t in term_2_uuid:
-                    G.node[t]['ndex:internalLink'] = '[%s](%s)' % (G.node[t]['Label'], term_2_uuid[t])
+                    G.nodes[t]['ndex:internalLink'] = '[%s](%s)' % (G.nodes[t]['Label'], term_2_uuid[t])
 
         G = ndex2.create_nice_cx_from_networkx(G)
         
@@ -3619,7 +3628,11 @@ class Ontology(object):
 
                 #G_nx = nx.from_pandas_dataframe(network_sub, g1, g2,
                  #                               edge_attr=features)
-                G_nx = nx.from_pandas_edgelist(network_sub, g1, g2, edge_attr=features)
+                if get_networkx_version() > 2.2:
+                    G_nx = nx.from_pandas_edgelist(network_sub, g1, g2, edge_attr=features,
+                                                   create_using=nx.DiGraph())
+                else:
+                    G_nx = nx.from_pandas_edgelist(network_sub, g1, g2, edge_attr=features)
 
                 if node_attr is not None:
                     set_node_attributes_from_pandas(G_nx, node_attr)
@@ -3636,7 +3649,17 @@ class Ontology(object):
                     df.loc[genes_in, c] = True
                 df.rename(columns=lambda x: 'Group:'+x, inplace=True)
                 ddot.utils.set_node_attributes_from_pandas(G_nx, df)
-                                   
+
+                # New: only keep the biggest compoent in the network
+                if get_networkx_version() >= 2.2:
+                    print('what is G_nx: ' + str(type(G_nx)))
+                    for c in nx.weakly_connected_components(G_nx):
+                        print('What is c: ' + str(type(c)) + ' str=' + str(c))
+                    G_nx = max((G_nx.subgraph(c) for c in nx.weakly_connected_components(G_nx)), key=len)
+
+                else:
+                    G_nx = max(nx.weakly_connected_component_subgraphs(G_nx), key=len)
+
                 G = ndex2.create_nice_cx_from_networkx(G_nx)
 
                 G.set_name('%s supporting network for %s' % (name, t))
@@ -3667,20 +3690,15 @@ class Ontology(object):
                     edge_group_string = '|'.join(edge_group_string)
                     G.set_network_attribute('edge groups', edge_group_string)
 
-
-                # New: only keep the biggest compoent in the network
-                G = max(nx.weakly_connected_component_subgraphs(G), key=len)
-
                 # New: compute a pre-layout to networks
                 if spring_feature != None:
-                    gsim = layouts._create_simple_graph(G)
-                    pos = nx.spring_layout(gsim, scale=200 * math.sqrt(gsim.number_of_nodes()), weight=spring_feature)
-                    G.pos = pos
+                    apply_simple_spring_layout(G)
 
                 start_upload = time.time()
                 ndex_url = G.upload_to(server=ndex_server, username=ndex_user, password=ndex_pass)
                 term_2_uuid[t] = parse_ndex_uuid(ndex_url)
-                ndex_client.set_network_system_properties(term_2_uuid[t], {'visibility': visibility})
+                if wait_for_network_to_be_ready(ndex_client, netid=term_2_uuid[t]) != None:
+                    ndex_client.set_network_system_properties(term_2_uuid[t], {'visibility': visibility})
                 upload_time = time.time() - start_upload
 
                 if verbose:
@@ -3696,6 +3714,8 @@ class Ontology(object):
                     print(upload_idx, 'No data provided for gene pairs in Term: %s' % t)
                     
         return term_2_uuid
+
+
 
     def get_best_ancestors(self, node_order=None, verbose=False, include_genes=True):
         """Compute the 'best' ancestor for every pair of terms. 'Best' is
