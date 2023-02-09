@@ -59,6 +59,8 @@ def support_data_focus(pairs, rf_score, netlinks=None):
             if len(info) == 3:
                 data_categories[name] = info[2]
             df_net = pd.read_table(loc, sep='\t', header=None)
+            if df_net.shape[1] < 3:
+                df_net[2] = 1.0 #fixes columns for unweighted network
             df_net.rename(columns = {0:'Gene1', 1:'Gene2', 2:name}, inplace=True)
             df_net[['Gene1', 'Gene2']] = np.sort(df_net[['Gene1', 'Gene2']], axis=1)
             df = df.merge(df_net, how='left', on = ['Gene1', 'Gene2'])
